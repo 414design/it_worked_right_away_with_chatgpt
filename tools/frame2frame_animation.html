@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Frame to Frame Animation – Doodle Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Annie Use Your Telescope',cursive;background:#f2f2f2;display:flex;flex-direction:column;align-items:center;user-select:none}
+#stage{border:1px solid #666;background:#fff;margin-top:4px}
+#timeline{display:flex;overflow-x:auto;width:900px;margin-top:6px;background:#ddd;padding:4px}
+.thumb{width:100px;height:70px;margin-right:4px;flex-shrink:0;border:2px solid transparent;cursor:pointer;position:relative;background:#fff}
+.thumb canvas{width:100%;height:100%}
+.thumb .del{position:absolute;top:2px;right:2px;background:#c00;color:#fff;border:none;padding:2px 6px;font-size:12px}
+.thumb.active{border-color:#08f}
+#controls{display:flex;flex-direction:column;gap:8px;margin:6px;width:900px}
+.controlsRow{display:flex;gap:6px;width:100%;flex-wrap:wrap;align-items:center;padding:8px 12px;background:#f0f0f0;justify-content:space-between}
+input[type=color]{width:36px;height:28px;vertical-align:middle;border:2px solid #666;border-radius:4px}
+input[type=range]{width:140px;height:18px;accent-color:#000;border-radius:10px}
+#status{margin-left:8px;font-size:13px;color:#080}
+#doodleOverlay{position:fixed;inset:0;z-index:9999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.6rem;transition:opacity .6s ease,visibility .6s ease;pointer-events:auto}
+#doodleOverlay.hide{opacity:0;visibility:hidden;pointer-events:none}
+#doodleTitle{font-size:3rem;color:#222;text-align:center;margin:0;letter-spacing:2px}
+#startCircle{width:130px;height:130px;position:relative;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#startCircle svg{position:absolute;inset:0;width:100%;height:100%}
+#startCircle span{position:relative;z-index:2;font-size:1.5rem}
+#startCircle:hover{transform:scale(1.06)}
+#doodleLines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.doodleBtn{font-family:'Annie Use Your Telescope',cursive;border:1.5px solid #444;background:#fff;border-radius:50rem;padding:6px 14px;font-size:14px;transition:.12s;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.05);cursor:pointer}
+.doodleBtn:hover{background:#eaeaea}
+.doodleRange,.doodleInput{border:1.5px solid #666;border-radius:8px;background:#fff;padding:4px;height:22px}
+.doodleInput{font-size:14px;padding:4px 6px}
+input[type=file]{display:none}
+.fileIcon{display:inline-flex;align-items:center;justify-content:center;width:34px;height:28px;cursor:pointer;border:1.5px solid #666;border-radius:6px;background:#fff;transition:.15s}
+.fileIcon:hover{background:#e6e6e6}
+.fileIcon svg{width:18px;height:18px;fill:#000}
+#aboutBtn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:28px;cursor:pointer;border:none;border-radius:6px;background:#000;transition:.15s;margin-left:4px}
+#aboutBtn:hover{background:#333}
+#aboutBtn svg{width:18px;height:18px;fill:#fff}
+#aboutCard{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;visibility:hidden;opacity:0;transition:.3s}
+#aboutCard.show{visibility:visible;opacity:1}
+#aboutBox{background:#fff;border:2px solid #000;border-radius:12px;padding:24px 32px;max-width:420px;text-align:center;font-family:'Annie Use Your Telescope',cursive;font-size:15px;line-height:1.6;position:relative}
+#aboutBox h3{margin:0 0 12px;font-size:1.4rem}
+#aboutBox a{color:#08f;text-decoration:none}
+#aboutBox a:hover{text-decoration:underline}
+.scribbleStar{position:absolute;pointer-events:none}
+.scribbleStar svg{stroke:#000;stroke-width:2;fill:none}
+.scribbleLine{position:absolute;pointer-events:none}
+.scribbleLine svg{stroke:#000;stroke-width:2;fill:none}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
+</head>
+<body>
+
+<div id="doodleOverlay">
+  <svg id="doodleLines" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" preserveAspectRatio="none"></svg>
+  <h1 id="doodleTitle">Frame to Frame Animation</h1>
+  <button id="startCircle" aria-label="Start">
+    <svg viewBox="0 0 120 120" fill="none"><circle cx="60" cy="60" r="50" stroke="#000" stroke-width="3"/></svg>
+    <span>Start</span>
+  </button>
+</div>
+
+<div id="controls">
+  <div class="controlsRow">
+    <div style="display:flex;gap:6px">
+      <button id="btnPlay" class="doodleBtn">▶ Play</button>
+      <button id="btnStop" class="doodleBtn">⏸ Stop</button>
+      <button id="btnAdd" class="doodleBtn">+ Frame</button>
+      <button id="btnDup" class="doodleBtn">Dup Frame</button>
+      <button id="btnDel" class="doodleBtn">Delete Frame</button>
+      <button id="expGif" class="doodleBtn">Export GIF</button>
+      <button id="expWebm" class="doodleBtn">Export WebM</button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <label class="fileIcon" title="Bild laden">
+        <input type="file" id="inpMedia" accept="image/*">
+        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+      </label>
+      <button id="aboutBtn" title="About me" aria-label="About me">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </button>
+      <span id="status"></span>
+    </div>
+  </div>
+  <div class="controlsRow">
+    <div style="display:flex;gap:10px;align-items:center"><label>FPS:</label><input type="range" id="speed" min="1" max="60" value="24" class="doodleRange"><span id="fpsValue" style="min-width:30px">24</span></div>
+    <div style="display:flex;gap=10px;align-items:center"><input type="color" id="picker" value="#000000" class="doodleInput"><select id="tool" class="doodleInput"><option>Pen</option><option>Eraser</option><option>Rectangle</option><option>Circle</option><option>Triangle</option><option>Fill</option></select></div>
+    <div style="display:flex;gap:10px;align-items:center"><label>Pen Thickness:</label><input type="range" id="lineWidth" min="1" max="50" value="2" class="doodleRange"><span id="lineWidthValue" style="min-width:20px">2</span></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <select id="penStyle" class="doodleInput"><option>Standard</option><option>Charcoal</option><option>Colored Pencil</option><option>Watercolor</option><option>Marker</option></select>
+      <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="onion" checked> Onion Skin</label>
+    </div>
+  </div>
+</div>
+
+<canvas id="stage" width="900" height="600"></canvas>
+<div id="timeline"></div>
+
+<div id="aboutCard">
+  <div id="aboutBox">
+    <div class="scribbleStar" style="top:14px;left:18px;width:26px;height:26px"><svg viewBox="0 0 24 24"><path d="M11.5 2l1.2 5.8h5.8l-4.7 3.4 1.8 5.8-4.5-3.4-4.5 3.4 1.8-5.8-4.7-3.4h5.8z"/></svg></div>
+    <div class="scribbleStar" style="top:8px;right:24px;width:20px;height:20px"><svg viewBox="0 0 24 24"><path d="M11.5 2l1.2 5.8h5.8l-4.7 3.4 1.8 5.8-4.5-3.4-4.5 3.4 1.8-5.8-4.7-3.4h5.8z"/></svg></div>
+<div class="scribbleLine" style="bottom:0;left:0;width:100%;height:20px">
+  <svg viewBox="0 0 240 20" preserveAspectRatio="none" style="width:100%;height:100%;">
+    <path d="M0 10c30-4 60 6 90 0s60 8 90 0 60 6 90 0" stroke-linecap="round"/>
+  </svg>
+</div>
+    <h3>About me</h3>
+    <p><strong>Tool created by:</strong> Senay Dogru</p>
+    <p><strong>Used Models:</strong><br>60 % Kimi-K2-Instruct-0905<br>35 % Qwen/Qwen3-Coder-30B-A3B-Instruct<br>5 % ChatGPT</p>
+    <p><strong>Used Google Font:</strong> Annie Use Your Telescope</p>
+    <p><strong>Current University of the creator:</strong><br><a href="https://design.h-da.de" target="_blank">https://design.h-da.de</a></p>
+    <button class="doodleBtn" onclick="document.getElementById('aboutCard').classList.remove('show')">Close</button>
+  </div>
+</div>
+
+<script>
+document.getElementById('aboutBtn').addEventListener('click',()=>{document.getElementById('aboutCard').classList.add('show')});
+const stage=document.getElementById('stage'), ctx=stage.getContext('2d'), timeline=document.getElementById('timeline');
+let frames=[], active=0, playing=false, fps=24, onion=true;
+let tool='Pen', color='#000000', lineWidth=2, penStyle='Standard';
+let isDown=false, startX=0, startY=0;
+
+const svg=document.getElementById('doodleLines');
+const svgNS="http://www.w3.org/2000/svg";
+function rand(a,b){return Math.random()*(b-a)+a}
+function animatePathDraw(path,duration=900,delay=0){
+  const len=path.getTotalLength();
+  path.style.transition='none';
+  path.style.strokeDasharray=len;
+  path.style.strokeDashoffset=len;
+  path.style.opacity=0;
+  const startAt=performance.now()+delay;
+  function tick(now){
+    if(now<startAt){requestAnimationFrame(tick);return}
+    path.style.opacity=1;
+    const t=Math.min(1,(now-startAt)/duration);
+    path.style.strokeDashoffset=(1-t)*len;
+    if(t<1)requestAnimationFrame(tick);
+    else path.style.strokeDashoffset=0;
+  }
+  requestAnimationFrame(tick);
+}
+function buildOverlay(){
+  svg.innerHTML='';
+  const palette=['#000','#222','#444'];
+  const topD=`M 0,55 Q ${rand(200,400)},${rand(25,45)} 1000,${rand(55,75)}`;
+  const pTop=document.createElementNS(svgNS,'path');
+  pTop.setAttribute('d',topD);pTop.setAttribute('fill','none');pTop.setAttribute('stroke',palette[0]);pTop.setAttribute('stroke-width','2.6');pTop.setAttribute('stroke-linecap','round');
+  svg.appendChild(pTop);
+  const bottomD=`M 0,${700-rand(55,75)} Q ${rand(200,400)},${700-rand(25,45)} 1000,${700-rand(55,75)}`;
+  const pBottom=document.createElementNS(svgNS,'path');
+  pBottom.setAttribute('d',bottomD);pBottom.setAttribute('fill','none');pBottom.setAttribute('stroke',palette[1]);pBottom.setAttribute('stroke-width','2.6');pBottom.setAttribute('stroke-linecap','round');
+  svg.appendChild(pBottom);
+  const leftD=`M ${rand(25,45)},0 Q ${rand(45,65)},${rand(200,400)} ${rand(55,75)},700`;
+  const pLeft=document.createElementNS(svgNS,'path');
+  pLeft.setAttribute('d',leftD);pLeft.setAttribute('fill','none');pLeft.setAttribute('stroke',palette[2]);pLeft.setAttribute('stroke-width','2.4');pLeft.setAttribute('stroke-linecap','round');
+  svg.appendChild(pLeft);
+  const rightD=`M ${1000-rand(25,45)},0 Q ${1000-rand(45,65)},${rand(200,400)} ${1000-rand(55,75)},700`;
+  const pRight=document.createElementNS(svgNS,'path');
+  pRight.setAttribute('d',rightD);pRight.setAttribute('fill','none');pRight.setAttribute('stroke',palette[1]);pRight.setAttribute('stroke-width','2.4');pRight.setAttribute('stroke-linecap','round');
+  svg.appendChild(pRight);
+  let d=0;
+  animatePathDraw(pTop,900,d);d+=300;
+  animatePathDraw(pBottom,900,d);d+=300;
+  animatePathDraw(pLeft,900,d);d+=300;
+  animatePathDraw(pRight,900,d);
+}
+buildOverlay();
+document.getElementById('startCircle').addEventListener('click',()=>{document.getElementById('doodleOverlay').classList.add('hide');});
+
+function newFrame(){
+  const c=document.createElement('canvas'); c.width=900; c.height=600;
+  frames.push({canvas:c}); renderTimeline();
+}
+function renderTimeline(){
+  timeline.innerHTML='';
+  frames.forEach((f,i)=>{
+    const div=document.createElement('div'); div.className='thumb'+(i===active?' active':'');
+    const can=document.createElement('canvas'); can.width=100; can.height=70;
+    can.getContext('2d').drawImage(f.canvas,0,0,100,70); div.appendChild(can);
+    const del=document.createElement('button'); del.className='del'; del.innerHTML='✖';
+    del.onclick=e=>{e.stopPropagation(); frames.splice(i,1); if(active>=frames.length)active=frames.length-1; if(frames.length===0)newFrame(); renderTimeline(); drawStage();};
+    div.appendChild(del); div.onclick=()=>{active=i; drawStage(); renderTimeline();};
+    timeline.appendChild(div);
+  });
+}
+function drawStage(){
+  ctx.clearRect(0,0,stage.width,stage.height);
+  if(frames.length===0)return;
+  if(onion&&active>0){ctx.globalAlpha=.3; ctx.drawImage(frames[active-1].canvas,0,0); ctx.globalAlpha=1;}
+  ctx.drawImage(frames[active].canvas,0,0);
+}
+function applyPenStyle(cx,x0,y0,x1,y1,opt={}){
+  cx.strokeStyle=opt.color||color; cx.lineWidth=opt.width||lineWidth; cx.lineCap='round'; cx.lineJoin='round';
+  if(penStyle==='Standard'){
+    cx.globalAlpha=1;
+    cx.beginPath(); cx.moveTo(x0,y0); cx.lineTo(x1,y1); cx.stroke();
+    return;
+  }
+  if(penStyle==='Charcoal'){cx.shadowBlur=3; cx.shadowColor=opt.color||color; const seg=20; for(let i=0;i<seg;i++){const t1=i/seg,t2=(i+1)/seg,xx0=x0+(x1-x0)*t1+(Math.random()-.5)*5,yy0=y0+(y1-y0)*t1+(Math.random()-.5)*5,xx1=x0+(x1-x0)*t2+(Math.random()-.5)*5,yy1=y0+(y1-y0)*t2+(Math.random()-.5)*5; cx.beginPath(); cx.moveTo(xx0,yy0); cx.lineTo(xx1,yy1); cx.stroke();} cx.shadowBlur=0; return;}
+  if(penStyle==='Watercolor'){
+    const steps = 5;
+    for (let i = 0; i < steps; i++) {
+      cx.globalAlpha = 0.5 + Math.random() * 0.1;
+      const numLines = 3 + Math.floor(Math.random() * 3);
+      for (let j = 0; j < numLines; j++) {
+        cx.beginPath();
+        const offsetX = (Math.random() - 0.5) * (lineWidth * 2.5);
+        const offsetY = (Math.random() - 0.5) * (lineWidth * 2.5);
+        const startX = x0 + offsetX;
+        const startY = y0 + offsetY;
+        const endX = x1 + (Math.random() - 0.5) * (lineWidth * 3);
+        const endY = y1 + (Math.random() - 0.5) * (lineWidth * 3);
+        const adjustedLineWidth = Math.max(0.5, lineWidth * (0.8 + Math.random() * 0.4));
+        cx.lineWidth = adjustedLineWidth;
+        cx.moveTo(startX, startY);
+        cx.lineTo(endX, endY);
+        cx.stroke();
+      }
+    }
+    const numDots = 1 + Math.floor(Math.random() * 3);
+    for (let k = 0; k < numDots; k++) {
+      const dotSize = 1 + Math.random() * 2;
+      cx.globalAlpha = 0.4 + Math.random() * 0.2;
+      const t = Math.random();
+      const dotX = x0 + (x1 - x0) * t + (Math.random() - 0.5) * lineWidth * 2;
+      const dotY = y0 + (y1 - y0) * t + (Math.random() - 0.5) * lineWidth * 2;
+      cx.beginPath();
+      cx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);
+      cx.fill();
+    }
+    cx.globalAlpha = 1;
+    return;
+  }
+  if(penStyle==='Marker'){const seg=12; for(let i=0;i<seg;i++){const t1=i/seg,t2=(i+1)/seg,xx0=x0+(x1-x0)*t1+(Math.random()-.5)*2,yy0=y0+(y1-y0)*t1+(Math.random()-.5)*2,xx1=x0+(x1-x0)*t2+(Math.random()-.5)*2,yy1=y0+(y1-y0)*t2+(Math.random()-.5)*2; cx.beginPath(); cx.moveTo(xx0,yy0); cx.lineTo(xx1,yy1); cx.stroke();} return;}
+  if(penStyle==='Colored Pencil'){cx.beginPath(); cx.moveTo(x0+(Math.random()-.5)*1,y0+(Math.random()-.5)*1); cx.lineTo(x1+(Math.random()-.5)*1,y1+(Math.random()-.5)*1); cx.stroke(); return;}
+}
+stage.onmousedown=e=>{
+  if(frames.length===0)return;
+  isDown=true; startX=e.offsetX; startY=e.offsetY;
+  if(['Rectangle','Circle','Triangle'].includes(tool)){
+    const src=frames[active].canvas; src._backup=document.createElement('canvas'); src._backup.width=900; src._backup.height=600; src._backup.getContext('2d').drawImage(src,0,0);
+  }
+};
+stage.onmousemove=e=>{
+  if(!isDown||frames.length===0)return;
+  const x=e.offsetX, y=e.offsetY; const cx=frames[active].canvas.getContext('2d');
+  if(['Rectangle','Circle','Triangle'].includes(tool)){const b=frames[active].canvas._backup; cx.clearRect(0,0,900,600); cx.drawImage(b,0,0);}
+  if(tool==='Pen'){
+    cx.globalCompositeOperation='source-over';
+    applyPenStyle(cx,startX,startY,x,y); startX=x; startY=y;
+  }
+  else if(tool==='Eraser'){
+    cx.globalCompositeOperation='destination-out';
+    cx.beginPath(); cx.arc(x,y,lineWidth*2,0,Math.PI*2); cx.fill();
+    cx.globalCompositeOperation='source-over';
+  }
+  else if(tool==='Rectangle'){
+    cx.strokeStyle=color; cx.lineWidth=lineWidth; cx.lineCap='round'; cx.lineJoin='round';
+    cx.beginPath(); cx.rect(startX,startY,x-startX,y-startY); cx.stroke();
+  }
+  else if(tool==='Circle'){
+    const r=Math.hypot(x-startX,y-startY);
+    cx.strokeStyle=color; cx.lineWidth=lineWidth; cx.lineCap='round'; cx.lineJoin='round';
+    cx.beginPath(); cx.arc(startX,startY,r,0,Math.PI*2); cx.stroke();
+  }
+  else if(tool==='Triangle'){
+    cx.strokeStyle=color; cx.lineWidth=lineWidth; cx.lineCap='round'; cx.lineJoin='round';
+    cx.beginPath();
+    cx.moveTo(startX+(x-startX)/2,startY);
+    cx.lineTo(startX,y);
+    cx.lineTo(x,y);
+    cx.closePath();
+    cx.stroke();
+  }
+  drawStage();
+};
+stage.onmouseup=()=>{isDown=false; delete frames[active].canvas._backup;};
+stage.addEventListener('click',e=>{if(tool!=='Fill')return; const cx=frames[active].canvas.getContext('2d'); cx.fillStyle=color; cx.fillRect(0,0,900,600); drawStage();});
+
+function setStatus(txt,ms=2500){const el=document.getElementById('status'); el.textContent=txt; if(ms>0) setTimeout(()=>{if(el.textContent===txt)el.textContent='';},ms);}
+let playInterval;
+function play(){if(playing)return; playing=true; let idx=0; function frame(){ctx.clearRect(0,0,stage.width,stage.height); ctx.drawImage(frames[idx].canvas,0,0); idx=(idx+1)%frames.length;} frame(); playInterval=setInterval(frame,1000/fps);}
+function stop(){playing=false; clearInterval(playInterval); drawStage();}
+
+document.getElementById('btnPlay').onclick=play;
+document.getElementById('btnStop').onclick=stop;
+document.getElementById('btnAdd').onclick=()=>{newFrame(); active=frames.length-1; renderTimeline(); drawStage();};
+document.getElementById('btnDup').onclick=()=>{const src=frames[active].canvas; const c=document.createElement('canvas'); c.width=900; c.height=600; c.getContext('2d').drawImage(src,0,0); frames.splice(active+1,0,{canvas:c}); active++; renderTimeline(); drawStage();};
+document.getElementById('btnDel').onclick=()=>{frames.splice(active,1); if(frames.length===0)newFrame(); active=Math.min(active,frames.length-1); renderTimeline(); drawStage();};
+document.getElementById('picker').onchange=e=>color=e.target.value;
+document.getElementById('lineWidth').oninput=e=>{lineWidth=+e.target.value; document.getElementById('lineWidthValue').textContent=lineWidth;};
+document.getElementById('penStyle').onchange=e=>penStyle=e.target.value;
+document.getElementById('tool').onchange=e=>tool=e.target.value;
+document.getElementById('onion').onchange=e=>onion=e.target.checked;
+document.getElementById('speed').oninput=e=>{fps=+e.target.value; document.getElementById('fpsValue').textContent=fps; if(playing){stop(); play();}};
+
+if('MediaRecorder' in window){
+  document.getElementById('expWebm').disabled=false;
+  document.getElementById('expWebm').onclick=async()=>{
+    if(frames.length===0){setStatus('Keine Frames!'); return;}
+    setStatus('WebM …');
+    const stream=stage.captureStream(fps);
+    const rec=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9'});
+    const chunks=[];
+    rec.ondataavailable=e=>chunks.push(e.data);
+    rec.onstop=()=>{const blob=new Blob(chunks,{type:'video/webm'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='animation.webm'; a.click(); setStatus('WebM fertig');};
+    rec.start();
+    const dur=frames.length*1000/fps;
+    await new Promise(r=>setTimeout(r,dur+500));
+    rec.stop();
+  };
+}else{
+  document.getElementById('expWebm').onclick=()=>setStatus('MediaRecorder fehlt');
+}
+
+// ---------- GIF-Export ----------
+document.getElementById('expGif').onclick = () => {
+  if (!frames.length) { setStatus('Keine Frames vorhanden!'); return; }
+  const fpsVal = +document.getElementById('speed').value;
+  const images = frames.map(f => {
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = f.canvas.width; tmpCanvas.height = f.canvas.height;
+    const tmpCtx = tmpCanvas.getContext('2d');
+    tmpCtx.fillStyle = '#ffffff';
+    tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+    tmpCtx.drawImage(f.canvas, 0, 0);
+    return tmpCanvas.toDataURL('image/png');
+  });
+  const btn = document.getElementById('expGif');
+  btn.textContent = '⏳ Exportiere...'; btn.disabled = true; setStatus('GIF wird erstellt…',3000);
+  gifshot.createGIF({
+    images: images,
+    gifWidth: 900,
+    gifHeight: 600,
+    frameDuration: 1 / Math.max(1,fpsVal),
+    numFrames: images.length,
+    progressCallback: function(p){setStatus('GIF: '+Math.round(p*100)+'%',1000); btn.textContent=`Exportiere… ${Math.round(p*100)}%`;}
+  }, function(obj){
+    btn.disabled=false; btn.textContent='Export GIF';
+    if(!obj.error){ const a=document.createElement('a'); a.href=obj.image; a.download='doodle-animation.gif'; a.click(); setStatus('GIF gespeichert ✔',2500);}
+    else {console.error('gifshot error:',obj); setStatus('Fehler beim GIF-Export',3000); alert('Fehler beim GIF-Export — siehe Konsole.');}
+  });
+};
+
+// ---------- Import Button fix ----------
+document.getElementById('inpMedia').addEventListener('change', async (e) => {
+  const file = e.target.files[0]; if(!file) return;
+  const type = file.type;
+  if(type.startsWith('image/')){
+    const img = new Image();
+    img.onload = () => {
+      const cx = frames[active].canvas.getContext('2d');
+      cx.clearRect(0,0,frames[active].canvas.width,frames[active].canvas.height);
+      cx.drawImage(img,0,0,frames[active].canvas.width,frames[active].canvas.height);
+      drawStage(); renderTimeline(); setStatus('Bild importiert ✔');
+    };
+    img.src = URL.createObjectURL(file);
+  } else { setStatus('Nur Bilder unterstützt',3000);}
+  e.target.value = '';
+});
+
+newFrame(); renderTimeline(); drawStage();
+</script>
+</body>
+</html>

@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"1.0">
+    <title>vibe type</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: monospace;
+            background: white;
+            color: #000;
+            height: 100vh;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto;
+            }
+        }
+
+        /* Left Column - Canvas */
+        .left-panel {
+            padding: 20px;
+            border-right: 1px solid #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #fafafa;
+            position: relative;
+            height: 100%;
+            overflow: auto;
+        }
+
+        @media (max-width: 768px) {
+            .left-panel {
+                border-right: none;
+                border-bottom: 1px solid #000;
+                padding: 15px;
+            }
+        }
+
+        .game-title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 480px) {
+            .game-title {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 10px;
+                text-align: center;
+                width: 100%;
+            }
+        }
+
+        .canvas-container {
+            border: 1px solid #000;
+            margin-top: 40px;
+            position: relative;
+            max-width: 100%;
+        }
+
+        canvas {
+            display: block;
+            background: white;
+            width: 400px;
+            height: 500px;
+        }
+
+        @media (max-width: 500px) {
+            canvas {
+                width: 340px;
+                height: 425px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            canvas {
+                width: 280px;
+                height: 350px;
+            }
+        }
+
+        .info-button {
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2rem;
+            background: none;
+            border: 1px solid #000;
+            color: #000;
+        }
+
+        @media (max-width: 480px) {
+            .info-button {
+                position: static;
+                margin-top: 15px;
+                align-self: center;
+            }
+        }
+
+        /* Änderung: Neuer Style für Info-Overlay */
+        .info-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 400px;
+            background: black;
+            color: white;
+            border: 1px solid white;
+            padding: 30px;
+            z-index: 1000;
+            display: none;
+            text-align: left;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .info-overlay h2 {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            color: white;
+            text-align: left;
+        }
+
+        .info-overlay p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            background: none;
+            border: 1px solid white;
+            color: white;
+        }
+
+        .close-button:hover {
+            background: white;
+            color: black;
+        }
+
+        /* Right Column - UI */
+        .right-panel {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .right-panel {
+                padding: 15px;
+                height: auto;
+            }
+        }
+
+        .section {
+            padding: 15px;
+            background: white;
+            border: 1px solid #000;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .section {
+                padding: 10px;
+                margin-bottom: 15px;
+            }
+        }
+
+        h2 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            color: #000;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .button-row button {
+            flex-grow: 1;
+            min-width: 45px;
+        }
+
+        @media (max-width: 480px) {
+            .button-row {
+                gap: 5px;
+            }
+        }
+
+        button {
+            padding: 8px;
+            background: none;
+            color: #000;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            border: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover:not(:disabled) {
+            background: #000;
+            color: white;
+        }
+
+        button:disabled {
+            background: #ccc;
+            color: #999;
+            cursor: not-allowed;
+            border-color: #999;
+        }
+
+        .control-button {
+            font-size: 1.2rem;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 2px;
+            -webkit-appearance: none;
+            background: #000;
+            outline: none;
+            min-width: 100px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #000;
+            cursor: pointer;
+        }
+
+        #radius-value {
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .instructions {
+            font-size: 0.75rem;
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #000;
+        }
+
+        @media (max-width: 480px) {
+            .instructions {
+                font-size: 0.7rem;
+                padding: 8px;
+            }
+        }
+
+        .instructions p {
+            margin-bottom: 6px;
+        }
+
+        .preview-container {
+            height: 120px;
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            background: #f9f9f9;
+            border: 1px solid #000;
+        }
+
+        .preview-item {
+            padding: 3px;
+            background: white;
+            text-align: center;
+            font-size: 0.8rem;
+            height: 60px;
+            width: 60px;
+            min-width: 60px;
+            border: 1px solid #000;
+        }
+
+        .preview-svg {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-svg svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .preview-label {
+            font-size: 0.7rem;
+            color: #000;
+            word-wrap: break-word;
+            display: block;
+            margin-top: 3px;
+        }
+
+        .chars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+            gap: 10px;
+            padding: 15px;
+            background: #f9f9f9;
+            overflow-y: auto;
+            border: 1px solid #000;
+            height: 200px;
+        }
+
+        @media (max-width: 768px) {
+            .chars-grid {
+                height: 150px;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .chars-grid {
+                height: 120px;
+            }
+        }
+
+        .char-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            background: white;
+            border: 1px solid #000;
+            border-radius: 50%;
+            transition: all 0.2s;
+            padding: 0;
+            color: #000;
+            margin: 0 auto;
+        }
+
+        .char-btn.active {
+            background: #000;
+            color: white;
+        }
+
+        .char-btn.saved {
+            background: #f0f0f0;
+            color: #000;
+        }
+
+        .export-section {
+            margin-top: auto;
+            padding: 15px 0;
+            display: flex;
+            width: 100%;
+        }
+
+        #export-btn {
+            padding: 10px 20px;
+            font-weight: bold;
+            background: none;
+            color: #000;
+            border: 1px solid #000;
+            width: 100%;
+        }
+
+        #export-btn:hover {
+            background: #000;
+            color: white;
+        }
+
+        @media (max-width: 480px) {
+            #export-btn {
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="game-title">vibe type</div>
+            
+            <div class="canvas-container">
+                <canvas id="game-canvas" width="400" height="500"></canvas>
+            </div>
+            
+            <div class="info-button">i</div>
+            
+            <!-- Aktualisierter Info-Text -->
+            <div class="info-overlay" id="info-overlay">
+                <div class="close-button">×</div>
+                <h2>Information</h2>
+                <p>This tool is part of a collection of tools "It worked right away with ChatGPT" developed by students at the Darmstadt University of Applied Sciences, supervised by Prof. Felix Dölker.</p>
+                <p>Vibe Type was developed by Kaya Kapotas. This tool was created using vibe coding and only the open source AIs of Hugging Chat and the model DeepSeek-R1-0528.</p>
+                <p>Users can playfully create their own fonts and then develop them further in other programs. The tool invites designers to question their usual working methods. Instead of jumping into the middle of the process, you start from scratch and build the letters from the bottom up.</p>
+                <p>Vibe Type is therefore an experiment and an invitation to play through the alphabet in a whole new way.</p>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="section">
+                <h2>Preview</h2>
+                <div id="preview" class="preview-container"></div>
+            </div>
+            
+            <div class="section">
+                <h2>Character Selection</h2>
+                <div id="chars-grid" class="chars-grid"></div>
+            </div>
+            
+            <div class="section">
+                <h2>Controls</h2>
+                <div class="button-row">
+                    <button id="start-btn" class="control-button">▶</button>
+                    <button id="pause-btn" class="control-button" disabled>⏸</button>
+                    <button id="finish-btn" class="control-button" disabled>✓</button>
+                    <button id="reset-btn" class="control-button" disabled>⟳</button>
+                </div>
+                
+                <div class="slider-group">
+                    <label for="radius-slider">Circle Size:</label>
+                    <input type="range" id="radius-slider" min="10" max="40" value="20">
+                    <span id="radius-value">20</span>
+                </div>
+                
+                <div class="instructions">
+                    <p><strong>Arrow Keys:</strong> Move circle</p>
+                    <p><strong>Space:</strong> Start/Pause</p>
+                    <p><strong>Enter:</strong> Save character</p>
+                </div>
+            </div>
+            
+            <div class="export-section">
+                <button id="export-btn">Export (ZIP)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CANVAS_WIDTH = 400;
+        const CANVAS_HEIGHT = 500;
+        const GRID_SIZE = 20;
+        
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = CANVAS_WIDTH * dpr;
+        canvas.height = CANVAS_HEIGHT * dpr;
+        ctx.scale(dpr, dpr);
+        
+        // Setzt die Canvas-Anzeigegröße auf 400x500 Pixel
+        canvas.style.width = '400px';
+        canvas.style.height = '500px';
+        
+        let currentChar = null;
+        let isPlaying = false;
+        let isPaused = false;
+        let currentCircle = null;
+        let placedCircles = {};
+        let savedChars = {};
+        let currentRadius = 20;
+        let keys = {};
+        
+        // Neue Variablen für zeitbasierte Bewegung
+        const FALL_SPEED = 90;      // Pixel pro Sekunde
+        const FAST_FALL_SPEED = 400; // Pixel pro Sekunde beim Pfeil-runter
+        const MOVE_SPEED = 260;      // Pixel pro Sekunde seitlich
+        let lastTime = 0;
+        let moveLeft = false;
+        let moveRight = false;
+        
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const radiusSlider = document.getElementById('radius-slider');
+        const radiusValue = document.getElementById('radius-value');
+        const charsGrid = document.getElementById('chars-grid');
+        const previewContainer = document.getElementById('preview');
+        const exportBtn = document.getElementById('export-btn');
+        const infoButton = document.querySelector('.info-button');
+        const infoOverlay = document.getElementById('info-overlay');
+        const closeButton = document.querySelector('.close-button');
+        
+        window.addEventListener('load', init);
+        
+        function init() {
+            startBtn.addEventListener('click', startGame);
+            pauseBtn.addEventListener('click', togglePause);
+            finishBtn.addEventListener('click', finishChar);
+            resetBtn.addEventListener('click', resetChar);
+            
+            radiusSlider.addEventListener('input', () => {
+                currentRadius = parseInt(radiusSlider.value);
+                radiusValue.textContent = currentRadius;
+                if (currentCircle) currentCircle.radius = currentRadius;
+            });
+            
+            exportBtn.addEventListener('click', exportToZip);
+            
+            infoButton.addEventListener('click', () => {
+                infoOverlay.style.display = 'block';
+            });
+            
+            closeButton.addEventListener('click', () => {
+                infoOverlay.style.display = 'none';
+            });
+            
+            // Keydown: Taste wird gedrückt
+            document.addEventListener('keydown', (e) => {
+                keys[e.key] = true;
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (isPlaying) finishChar();
+                }
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    if (isPlaying) togglePause();
+                    else if (currentChar) startGame();
+                }
+                if (e.key === 'ArrowLeft') moveLeft = true;
+                if (e.key === 'ArrowRight') moveRight = true;
+            });
+            
+            // Keyup: Taste wird losgelassen
+            document.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+                if (e.key === 'ArrowDown' && currentCircle) {
+                    currentCircle.vy = FALL_SPEED;
+                }
+                if (e.key === 'ArrowLeft') moveLeft = false;
+                if (e.key === 'ArrowRight') moveRight = false;
+            });
+            
+            createCharGrid();
+            selectChar(charsGrid.querySelector('.char-btn').textContent);
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function createCharGrid() {
+            for (let i = 65; i <= 90; i++) createCharButton(String.fromCharCode(i));
+            for (let i = 97; i <= 122; i++) createCharButton(String.fromCharCode(i));
+            for (let i = 48; i <= 57; i++) createCharButton(String.fromCharCode(i));
+            ['.', ',', ':', ';', '?', '=', ')', '(', '/', '%', '"', '!', '+', '#', '*', '@']
+                .forEach(createCharButton);
+        }
+        
+        function createCharButton(char) {
+            const button = document.createElement('button');
+            button.classList.add('char-btn');
+            button.textContent = char;
+            button.addEventListener('click', () => selectChar(char));
+            charsGrid.appendChild(button);
+        }
+        
+        function selectChar(char) {
+            // Entferne 'active' Klasse von allen Buttons
+            document.querySelectorAll('.char-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Setze 'active' Klasse auf das ausgewählte Zeichen
+            const activeButton = [...document.querySelectorAll('.char-btn')].find(btn => btn.textContent === char);
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+            
+            currentChar = char;
+            
+            // Verwende gespeicherte Kreise, falls vorhanden
+            placedCircles[currentChar] = savedChars[currentChar] 
+                ? [...savedChars[currentChar]] 
+                : [];
+            
+            currentCircle = null;
+            isPlaying = false;
+            isPaused = false;
+            
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            finishBtn.disabled = true;
+            resetBtn.disabled = !currentChar;
+            
+            updatePreview();
+            draw();
+        }
+        
+        function startGame() {
+            if (!currentChar) return;
+            isPlaying = true;
+            isPaused = false;
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            finishBtn.disabled = false;
+            resetBtn.disabled = false;
+            
+            // Starte mit neuem Design für diesen Buchstaben
+            placedCircles[currentChar] = [];
+            
+            if (!currentCircle) spawnCircle();
+        }
+        
+        function togglePause() {
+            if (!isPlaying) return;
+            
+            isPaused = !isPaused;
+            pauseBtn.disabled = !isPlaying || false;
+        }
+        
+        function spawnCircle() {
+            currentCircle = {
+                x: CANVAS_WIDTH / 2,
+                y: currentRadius,
+                radius: currentRadius,
+                vx: 0,
+                vy: FALL_SPEED
+            };
+        }
+        
+        function gameLoop(currentTime) {
+            // Delta-Zeit in Sekunden berechnen
+            if (!lastTime) lastTime = currentTime;
+            const deltaTime = (currentTime - lastTime) / 1000; // in Sekunden
+            lastTime = currentTime;
+
+            if (isPlaying && !isPaused) {
+                moveCircle(deltaTime);
+                checkCollisions();
+                draw();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function moveCircle(deltaTime) {
+            if (!currentCircle) return;
+
+            // Fallgeschwindigkeit (zeitbasiert)
+            if (keys['ArrowDown']) {
+                currentCircle.y += FAST_FALL_SPEED * deltaTime;
+            } else {
+                currentCircle.y += FALL_SPEED * deltaTime;
+            }
+
+            // Seitliche Bewegung (zeitbasiert)
+            if (moveLeft) {
+                currentCircle.x -= MOVE_SPEED * deltaTime;
+            }
+            if (moveRight) {
+                currentCircle.x += MOVE_SPEED * deltaTime;
+            }
+
+            // Begrenzung auf Canvas
+            currentCircle.x = Math.max(currentCircle.radius, Math.min(CANVAS_WIDTH - currentCircle.radius, currentCircle.x));
+        }
+        
+        function checkCollisions() {
+            if (!currentCircle) return;
+            let collision = false;
+            
+            if (currentCircle.y + currentCircle.radius >= CANVAS_HEIGHT) {
+                currentCircle.y = CANVAS_HEIGHT - currentCircle.radius;
+                collision = true;
+            }
+            
+            const placed = placedCircles[currentChar] || [];
+            for (const circle of placed) {
+                const dx = currentCircle.x - circle.x;
+                const dy = currentCircle.y - circle.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < currentCircle.radius + circle.radius - 3) {
+                    const angle = Math.atan2(dy, dx);
+                    const minDist = currentCircle.radius + circle.radius - 3;
+                    currentCircle.x = circle.x + Math.cos(angle) * minDist;
+                    currentCircle.y = circle.y + Math.sin(angle) * minDist;
+                    collision = true;
+                    break;
+                }
+            }
+            
+            if (collision) {
+                placedCircles[currentChar].push({
+                    x: currentCircle.x,
+                    y: currentCircle.y,
+                    radius: currentCircle.radius
+                });
+                spawnCircle();
+            }
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH * dpr, CANVAS_HEIGHT * dpr);
+            
+            // Draw grid only
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            for (let y = 0; y <= CANVAS_HEIGHT; y += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(CANVAS_WIDTH, y);
+                ctx.stroke();
+            }
+            for (let x = 0; x <= CANVAS_WIDTH; x += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, CANVAS_HEIGHT);
+                ctx.stroke();
+            }
+            
+            // Draw placed circles
+            const circles = placedCircles[currentChar];
+            if (circles?.length) {
+                drawMergedCircles(circles);
+            }
+            
+            // Draw falling circle
+            if (isPlaying && !isPaused && currentCircle) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.beginPath();
+                ctx.arc(currentCircle.x, currentCircle.y, currentCircle.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawMergedCircles(circles) {
+            ctx.fillStyle = '#000';
+            circles.forEach(circle => {
+                ctx.beginPath();
+                ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            for (let i = 0; i < circles.length; i++) {
+                for (let j = i + 1; j < circles.length; j++) {
+                    const c1 = circles[i], c2 = circles[j];
+                    const dx = c2.x - c1.x, dy = c2.y - c1.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const minDist = c1.radius + c2.radius + 1;
+                    
+                    if (dist < minDist * 1.2) {
+                        const overlap = minDist - dist;
+                        if (overlap > 0.5 * Math.min(c1.radius, c2.radius)) {
+                            const angle = Math.atan2(dy, dx);
+                            const midX = (c1.x + c2.x) / 2;
+                            const midY = (c1.y + c2.y) / 2;
+                            
+                            ctx.save();
+                            ctx.translate(midX, midY);
+                            ctx.rotate(angle);
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(-overlap * 0.7, 0);
+                            ctx.bezierCurveTo(-overlap * 0.3, -overlap * 0.5, overlap * 0.3, -overlap * 0.5, overlap * 0.7, 0);
+                            ctx.bezierCurveTo(overlap * 0.3, overlap * 0.5, -overlap * 0.3, overlap * 0.5, -overlap * 0.7, 0);
+                            ctx.closePath();
+                            ctx.fill();
+                            
+                            ctx.restore();
+                        }
+                    }
+                }
+            }
+        }
+        
+        function finishChar() {
+            if (!currentChar || !placedCircles[currentChar]?.length) return;
+            
+            // Speichere Design für diese Character
+            savedChars[currentChar] = [...placedCircles[currentChar]];
+            
+            // Markiere Buchstaben als gespeichert
+            document.querySelectorAll('.char-btn').forEach(btn => {
+                if (btn.textContent === currentChar) {
+                    btn.classList.add('saved');
+                }
+            });
+            
+            // Setze Spielstatus zurück
+            isPlaying = false;
+            isPaused = false;
+            currentCircle = null;
+            
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            finishBtn.disabled = true;
+            resetBtn.disabled = false;
+            
+            draw();
+            updatePreview();
+        }
+        
+        function resetChar() {
+            if (!currentChar) return;
+            
+            // Setze nur die Kreise zurück - behalte gespeicherte Version
+            placedCircles[currentChar] = [];
+            
+            currentCircle = null;
+            isPlaying = false;
+            isPaused = false;
+            
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            finishBtn.disabled = true;
+            
+            // Wenn der Buchstabe gespeichert war, lösche die Vorschau nicht
+            // Verwende das gespeicherte Design für die Anzeige
+            if (savedChars[currentChar]) {
+                placedCircles[currentChar] = [...savedChars[currentChar]];
+            }
+            
+            draw();
+            updatePreview();
+        }
+        
+        function updatePreview() {
+            previewContainer.innerHTML = '';
+            
+            for (const [char, circles] of Object.entries(savedChars)) {
+                if (!circles.length) continue;
+                
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                previewItem.innerHTML = `
+                    <div class="preview-svg">${generateSVG(circles)}</div>
+                    <div class="preview-label">${char}</div>
+                `;
+                previewContainer.appendChild(previewItem);
+            }
+        }
+        
+        function generateSVG(circles) {
+            const scaleFactor = 15;
+            const scaledWidth = CANVAS_WIDTH * scaleFactor;
+            const scaledHeight = CANVAS_HEIGHT * scaleFactor;
+            const svgWidth = 60 * scaleFactor;
+            const svgHeight = 60 * scaleFactor;
+            
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${scaledWidth} ${scaledHeight}">
+                ${circles.map(c => `<circle cx="${c.x * scaleFactor}" cy="${c.y * scaleFactor}" r="${c.radius * scaleFactor}" fill="black" />`).join('')}
+            </svg>`;
+        }
+        
+        function exportToZip() {
+            if (!Object.keys(savedChars).length) {
+                alert("No characters to export!");
+                return;
+            }
+            
+            try {
+                const zip = new JSZip();
+                const folder = zip.folder('vibe_type');
+                const specialNames = {
+                    '.': 'period', ',': 'comma', ':': 'colon', ';': 'semicolon',
+                    '?': 'question', '=': 'equals', ')': 'parenright', '(': 'parenleft',
+                    '/': 'slash', '%': 'percent', '"': 'quotedbl', '!': 'exclam',
+                    '+': 'plus', '#': 'numbersign', '*': 'asterisk', '@': 'at'
+                };
+                
+                for (const [char, circles] of Object.entries(savedChars)) {
+                    if (!circles.length) continue;
+                    
+                    const filename = specialNames[char] || char;
+                    folder.file(`${filename}.svg`, generateSVG(circles));
+                }
+                
+                zip.generateAsync({type: 'blob'}).then(content => {
+                    const a = document.createElement('a');
+                    const url = URL.createObjectURL(content);
+                    a.href = url;
+                    a.download = 'vibe_type.zip';
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                });
+            } catch (error) {
+                alert("Export error: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

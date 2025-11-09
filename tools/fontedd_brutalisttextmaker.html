@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fontedd - Brutalist Font Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        body {
+            background-color: #000;
+            color: #ddd;
+            padding: min(20px, 2vw);
+            font-size: clamp(12px, 1.5vw, 14px);
+            line-height: 1.4;
+            background-image:
+                linear-gradient(rgba(60, 60, 60, 0.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(60, 60, 60, 0.2) 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: #111;
+            border: clamp(4px, 0.8vw, 8px) solid #333;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - min(40px, 4vw));
+        }
+
+        .header {
+            background: #000;
+            padding: clamp(10px, 1.5vw, 15px) clamp(15px, 2vw, 20px);
+            border-bottom: 4px solid #444;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            text-transform: uppercase;
+            letter-spacing: 0.2rem;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            margin: 0 0 10px 0;
+        }
+
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            padding: clamp(10px, 2vw, 20px);
+            gap: clamp(10px, 2vw, 20px);
+            flex: 1;
+        }
+
+        @media (min-width: 768px) {
+            .workspace {
+                flex-direction: row;
+            }
+        }
+
+        .left-panel {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .left-panel {
+                width: 25%;
+                min-width: 200px;
+            }
+        }
+
+        .glyph-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+            background-color: #060606;
+            padding: 10px;
+            border: 1px solid #333;
+            max-height: 300px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .glyph-grid {
+                grid-template-columns: repeat(3, 1fr);
+                max-height: 550px;
+            }
+        }
+
+        .glyph-card {
+            aspect-ratio: 1;
+            background: #111;
+            border: 2px solid #444;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            cursor: pointer;
+            color: #fff;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .glyph-card:hover {
+            background-color: #222;
+            border-color: #aaa;
+        }
+
+        .glyph-card.selected {
+            background-color: #000;
+            border: 3px solid #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .glyph-label {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 0.6rem;
+            color: #888;
+        }
+
+        .editor-panel {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(10px, 2vw, 20px);
+            flex: 1;
+        }
+
+        @media (min-width: 768px) {
+            .editor-panel {
+                width: 75%;
+            }
+        }
+
+        .editor-header {
+            background-color: #060606;
+            padding: clamp(10px, 1.5vw, 15px);
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        @media (min-width: 1024px) {
+            .editor-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        #currentGlyph {
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .editor-tools {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        @media (min-width: 640px) {
+            .editor-tools {
+                flex-direction: row;
+                gap: 15px;
+            }
+        }
+
+        .tools-section {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        @media (min-width: 640px) {
+            .tools-section {
+                gap: 10px;
+            }
+        }
+
+        .tool-btn {
+            padding: clamp(6px, 1vw, 8px) clamp(10px, 1.5vw, 15px);
+            background: #222;
+            color: #bbb;
+            border: 1px solid #444;
+            cursor: pointer;
+            font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .tool-btn:hover {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .tool-btn.selected {
+            background-color: #444;
+            border-color: #aaa;
+            color: #fff;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #bbb;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            max-width: 150px;
+            height: 6px;
+            background: #222;
+            outline: none;
+            border: 1px solid #444;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            cursor: pointer;
+            border: none;
+        }
+
+        .editor-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(10px, 2vw, 20px);
+            min-height: 400px;
+        }
+
+        @media (min-width: 1024px) {
+            .editor-content {
+                flex-direction: row;
+            }
+        }
+
+        .glyph-editor {
+            flex: 1;
+            background-color: #000;
+            border: 1px solid #333;
+            position: relative;
+            overflow: hidden;
+            min-height: 300px;
+        }
+
+        #editCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        @media (min-width: 1024px) {
+            .controls {
+                width: 200px;
+                min-width: 200px;
+            }
+        }
+
+        .controls-section {
+            background-color: #060606;
+            padding: clamp(10px, 1.5vw, 15px);
+            border: 1px solid #333;
+        }
+
+        .controls-section h3 {
+            color: #fff;
+            margin-bottom: 12px;
+            text-align: center;
+            font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: clamp(10px, 1.5vw, 12px);
+            background: #222;
+            color: #ddd;
+            border: 1px solid #444;
+            cursor: pointer;
+            font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background-color: #333;
+            border-color: #aaa;
+            color: #fff;
+        }
+
+        .export-btn {
+            background: #444;
+            color: #fff;
+            font-weight: bold;
+            border: 1px solid #666;
+        }
+
+        .export-btn:hover {
+            background: #555;
+            border-color: #888;
+        }
+
+        .info-panel {
+            padding: clamp(10px, 1.5vw, 15px);
+            background-color: #060606;
+            border: 1px solid #333;
+            font-size: clamp(0.7rem, 1vw, 0.8rem);
+            color: #888;
+            line-height: 1.5;
+        }
+
+        .brutalist-border {
+            position: absolute;
+            width: clamp(15px, 2vw, 20px);
+            height: clamp(15px, 2vw, 20px);
+            z-index: 10;
+        }
+
+        .brutalist-border-tl {
+            top: 0;
+            left: 0;
+            border-top: 4px solid #fff;
+            border-left: 4px solid #fff;
+        }
+
+        .brutalist-border-tr {
+            top: 0;
+            right: 0;
+            border-top: 4px solid #fff;
+            border-right: 4px solid #fff;
+        }
+
+        .brutalist-border-bl {
+            bottom: 0;
+            left: 0;
+            border-bottom: 4px solid #fff;
+            border-left: 4px solid #fff;
+        }
+
+        .brutalist-border-br {
+            bottom: 0;
+            right: 0;
+            border-bottom: 4px solid #fff;
+            border-right: 4px solid #fff;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #444, transparent);
+            margin: 15px 0;
+        }
+
+        .glitch {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 600 600' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            mix-blend-mode: overlay;
+        }
+
+        .status-bar {
+            background: #060606;
+            padding: clamp(8px, 1vw, 10px) clamp(10px, 1.5vw, 15px);
+            border-top: 1px solid #333;
+            font-size: clamp(0.7rem, 1vw, 0.9rem);
+            color: #888;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        @media (min-width: 640px) {
+            .status-bar {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #888;
+            flex-shrink: 0;
+        }
+
+        .status-dot.active {
+            background: #0f0;
+            box-shadow: 0 0 5px #0f0;
+        }
+
+        .status-dot.error {
+            background: #f00;
+            box-shadow: 0 0 5px #f00;
+        }
+
+        .font-name-input {
+            background: #222;
+            border: 1px solid #444;
+            padding: 5px 10px;
+            color: #fff;
+            width: 100%;
+            max-width: 200px;
+        }
+
+        .font-name-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 767px) {
+            .brutalist-border {
+                display: none;
+            }
+            
+            .current-glyph-container {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="glitch"></div>
+        <div class="brutalist-border brutalist-border-tl"></div>
+        <div class="brutalist-border brutalist-border-tr"></div>
+        <div class="brutalist-border brutalist-border-bl"></div>
+        <div class="brutalist-border brutalist-border-br"></div>
+
+        <div class="header">
+            <h1>Fontedd</h1>
+            <div class="font-name-container">
+                <label for="fontName">Font Name:</label>
+                <input type="text" id="fontName" class="font-name-input" value="BrutalistFont" placeholder="Enter font name">
+            </div>
+        </div>
+
+        <div class="workspace">
+            <div class="left-panel">
+                <div class="glyph-grid" id="glyphGrid">
+                    <!-- Glyphs will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="editor-panel">
+                <div class="editor-header">
+                    <div class="current-glyph-container">
+                        <span>Aktuelles Glyph: </span>
+                        <span id="currentGlyph">A</span>
+                    </div>
+                    <div class="editor-tools">
+                        <div class="tools-section">
+                            <button class="tool-btn selected" data-tool="pen">🖌️ Pen</button>
+                            <button class="tool-btn" data-tool="wiggly">〰️ Wavy</button>
+                            <button class="tool-btn" data-tool="star">⭐ Star</button>
+                            <button class="tool-btn" data-tool="eraser">🧹 Eraser</button>
+                        </div>
+                        <div class="slider-container">
+                            <span>Thickness:</span>
+                            <input type="range" min="1" max="30" value="3" id="thicknessSlider">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="editor-content">
+                    <div class="glyph-editor">
+                        <canvas id="editCanvas"></canvas>
+                    </div>
+
+                    <div class="controls">
+                        <div class="controls-section">
+                            <h3>AKTIONEN</h3>
+                            <div class="action-buttons">
+                                <button class="action-btn" id="clearBtn">Glyph löschen</button>
+                                <button class="action-btn" id="resetBtn">Alle löschen</button>
+                                <button class="action-btn export-btn" id="exportBtn">Font exportieren</button>
+                            </div>
+                        </div>
+
+                        <div class="controls-section">
+                            <h3>INFO</h3>
+                            <p>Verwenden Sie die linke Maustaste zum Zeichnen, Rechtsklick zum Löschen.</p>
+                            <div class="divider"></div>
+                            <p>Speichern Sie Ihre Arbeit regelmäßig!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Ready</span>
+            </div>
+            <div class="status-indicator">
+                <span>Fontedd v1.0 | Brutalist Font Editor</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize variables
+        let currentTool = 'pen';
+        let currentThickness = 3;
+        let isDrawing = false;
+        let lastX, lastY;
+        let glyphs = {};
+        let currentGlyph = 'A';
+        let canvas;
+        let ctx;
+        let wigglySeeds = {};
+        let fontName = 'BrutalistFont';
+
+        // Glyph data
+        const glyphList = [
+            // Uppercase letters (A-Z)
+            ...Array.from({length: 26}, (_, i) => String.fromCharCode(65 + i)),
+
+            // Lowercase letters (a-z)
+            ...Array.from({length: 26}, (_, i) => String.fromCharCode(97 + i)),
+
+            // Numbers
+            ...Array.from({length: 10}, (_, i) => String.fromCharCode(48 + i)),
+
+            // Symbols
+            '+', '-', '=', '≠', '>', '<', '→', '←', '↔', '@', '*', '⁂', '!', '?', '.', ',', ':', ';', '"', "'", '(', ')', '[', ']', '{', '}'
+        ];
+
+        // Initialize editor
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup canvas
+            canvas = document.getElementById('editCanvas');
+            ctx = canvas.getContext('2d');
+
+            // Resize canvas to fit its container
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Create glyph cards
+            renderGlyphGrid();
+
+            // Event listeners
+            setupEventListeners();
+
+            // Initialize first glyph
+            selectGlyph('A');
+
+            // Draw UI
+            drawGuidelines();
+
+            // Set up status indicator
+            updateStatus('Ready', 'active');
+
+            // Font name input
+            document.getElementById('fontName').addEventListener('input', (e) => {
+                fontName = e.target.value || 'BrutalistFont';
+            });
+        });
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = container.clientWidth * dpr;
+            canvas.height = container.clientHeight * dpr;
+            ctx.scale(dpr, dpr);
+            redrawGlyph();
+        }
+
+        function renderGlyphGrid() {
+            const grid = document.getElementById('glyphGrid');
+            grid.innerHTML = '';
+
+            glyphList.forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'glyph-card';
+                card.dataset.char = char;
+                card.innerHTML = `${char}<span class="glyph-label">${char}</span>`;
+                card.addEventListener('click', () => selectGlyph(char));
+                grid.appendChild(card);
+            });
+        }
+
+        function selectGlyph(char) {
+            // Update UI
+            currentGlyph = char;
+            document.getElementById('currentGlyph').textContent = char;
+
+            // Update grid selection
+            document.querySelectorAll('.glyph-card').forEach(card => {
+                card.classList.toggle('selected', card.dataset.char === char);
+            });
+
+            // Load the glyph data if exists, or initialize
+            if (!glyphs[char]) {
+                glyphs[char] = [];
+                wigglySeeds[char] = [];
+            }
+
+            redrawGlyph();
+        }
+
+        function redrawGlyph() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw guidelines first
+            drawGuidelines();
+
+            // Draw existing paths
+            const paths = glyphs[currentGlyph];
+            if (paths && paths.length > 0) {
+                paths.forEach((path, index) => drawPath(path, index));
+            }
+        }
+
+        function drawGuidelines() {
+            const canvasWidth = canvas.width / (window.devicePixelRatio || 1);
+            const canvasHeight = canvas.height / (window.devicePixelRatio || 1);
+            
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+
+            // Vertical center
+            ctx.beginPath();
+            ctx.moveTo(canvasWidth / 2, 0);
+            ctx.lineTo(canvasWidth / 2, canvasHeight);
+            ctx.stroke();
+
+            // Horizontal center
+            ctx.beginPath();
+            ctx.moveTo(0, canvasHeight / 2);
+            ctx.lineTo(canvasWidth, canvasHeight / 2);
+            ctx.stroke();
+
+            // Baseline
+            ctx.beginPath();
+            ctx.moveTo(0, canvasHeight * 0.7);
+            ctx.lineTo(canvasWidth, canvasHeight * 0.7);
+            ctx.stroke();
+
+            // Reset line style
+            ctx.setLineDash([]);
+        }
+
+        function setupEventListeners() {
+            // Canvas events - Mouse
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                eraseNearPoint(e.offsetX, e.offsetY);
+            });
+
+            // Canvas events - Touch
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing);
+
+            // Tool selection
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    currentTool = btn.dataset.tool;
+                });
+            });
+
+            // Thickness slider
+            const slider = document.getElementById('thicknessSlider');
+            slider.addEventListener('input', () => {
+                currentThickness = parseInt(slider.value);
+            });
+
+            // Clear button
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                glyphs[currentGlyph] = [];
+                wigglySeeds[currentGlyph] = [];
+                redrawGlyph();
+            });
+
+            // Reset button
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                if (confirm('Sind Sie sicher, dass Sie alle Glyphen zurücksetzen möchten? Dies löscht alle Ihre Arbeit.')) {
+                    glyphs = {};
+                    wigglySeeds = {};
+                    redrawGlyph();
+                }
+            });
+
+            // Export button
+            document.getElementById('exportBtn').addEventListener('click', exportFont);
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            isDrawing = true;
+            lastX = x;
+            lastY = y;
+
+            if (currentTool === 'eraser') {
+                eraseNearPoint(lastX, lastY);
+            }
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!isDrawing) return;
+
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const currentX = touch.clientX - rect.left;
+            const currentY = touch.clientY - rect.top;
+
+            switch(currentTool) {
+                case 'pen':
+                    drawStraightLine(lastX, lastY, currentX, currentY);
+                    break;
+                case 'wiggly':
+                    drawWigglyLine(lastX, lastY, currentX, currentY);
+                    break;
+                case 'star':
+                    drawStar(currentX, currentY);
+                    break;
+                case 'eraser':
+                    eraseNearPoint(currentX, currentY);
+                    break;
+            }
+
+            lastX = currentX;
+            lastY = currentY;
+        }
+
+        function updateStatus(text, status) {
+            document.getElementById('statusText').textContent = text;
+            const statusDot = document.getElementById('statusDot');
+            statusDot.className = 'status-dot';
+            if (status) {
+                statusDot.classList.add(status);
+            }
+        }
+
+        function startDrawing(e) {
+            if (e.button !== 0) return; // Only left button
+
+            isDrawing = true;
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+
+            if (currentTool === 'eraser') {
+                eraseNearPoint(lastX, lastY);
+            }
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const currentX = e.offsetX;
+            const currentY = e.offsetY;
+
+            switch(currentTool) {
+                case 'pen':
+                    drawStraightLine(lastX, lastY, currentX, currentY);
+                    break;
+                case 'wiggly':
+                    drawWigglyLine(lastX, lastY, currentX, currentY);
+                    break;
+                case 'star':
+                    drawStar(currentX, currentY);
+                    break;
+                case 'eraser':
+                    eraseNearPoint(currentX, currentY);
+                    break;
+            }
+
+            lastX = currentX;
+            lastY = currentY;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function drawStraightLine(fromX, fromY, toX, toY) {
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = currentThickness;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            // Store path
+            glyphs[currentGlyph].push({
+                type: 'line',
+                x1: fromX,
+                y1: fromY,
+                x2: toX,
+                y2: toY,
+                color: '#fff',
+                thickness: currentThickness
+            });
+        }
+
+        function drawWigglyLine(fromX, fromY, toX, toY) {
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const segments = Math.max(5, Math.floor(distance / 5));
+
+            // Generate deterministic seed for this wiggly line
+            const seed = Math.random();
+            wigglySeeds[currentGlyph] = wigglySeeds[currentGlyph] || [];
+            const seedIndex = wigglySeeds[currentGlyph].length;
+            wigglySeeds[currentGlyph].push(seed);
+
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+
+            const pathPoints = [{x: fromX, y: fromY}];
+
+            for (let i = 1; i <= segments; i++) {
+                const t = i / segments;
+                const x = fromX + dx * t;
+                const y = fromY + dy * t;
+
+                // Use deterministic random based on seed
+                const randomValue = seededRandom(seed, i);
+                const displacement = (randomValue * 8) - 4;
+                const wx = x + (dy / distance) * displacement;
+                const wy = y - (dx / distance) * displacement;
+
+                ctx.lineTo(wx, wy);
+                pathPoints.push({x: wx, y: wy});
+            }
+
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = currentThickness;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Store path with all points and seed
+            glyphs[currentGlyph].push({
+                type: 'wiggly',
+                points: pathPoints,
+                color: '#fff',
+                thickness: currentThickness,
+                seed: seed,
+                seedIndex: seedIndex
+            });
+        }
+
+        // Seeded random function for deterministic results
+        function seededRandom(seed, index) {
+            const s = Math.sin(seed * 9999 + index * 7777) * 10000;
+            return s - Math.floor(s);
+        }
+
+        function drawStar(x, y) {
+            const radius = currentThickness * 2; // Fixed size relation
+            const spikes = 5;
+            const rotation = Math.PI / 2 * 3;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y - radius);
+
+            for (let i = 0; i < spikes; i++) {
+                const angle = rotation + i * Math.PI * 2 / spikes;
+
+                const innerX = x + Math.cos(angle) * radius/2;
+                const innerY = y + Math.sin(angle) * radius/2;
+                ctx.lineTo(innerX, innerY);
+
+                const outerAngle = angle + Math.PI / spikes;
+                const outerX = x + Math.cos(outerAngle) * radius;
+                const outerY = y + Math.sin(outerAngle) * radius;
+                ctx.lineTo(outerX, outerY);
+            }
+
+            ctx.closePath();
+            ctx.lineWidth = Math.max(1, currentThickness / 2);
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+
+            // Store path
+            glyphs[currentGlyph].push({
+                type: 'star',
+                x: x,
+                y: y,
+                radius: radius,
+                color: '#fff',
+                thickness: Math.max(1, currentThickness / 2)
+            });
+        }
+
+        function eraseNearPoint(x, y) {
+            const maxDistance = currentThickness * 5;
+            const threshold = maxDistance * maxDistance;
+
+            let pathsToRemove = [];
+
+            glyphs[currentGlyph].forEach((path, index) => {
+                let shouldRemove = false;
+
+                if (path.type === 'line') {
+                    shouldRemove = isPointNearLine(x, y, path.x1, path.y1, path.x2, path.y2, threshold);
+                } else if (path.type === 'wiggly') {
+                    for (let point of path.points) {
+                        const distanceSq = (x - point.x) ** 2 + (y - point.y) ** 2;
+                        if (distanceSq < threshold) {
+                            shouldRemove = true;
+                            break;
+                        }
+                    }
+                } else if (path.type === 'star') {
+                    const distanceSq = (x - path.x) ** 2 + (y - path.y) ** 2;
+                    shouldRemove = distanceSq < threshold;
+                }
+
+                if (shouldRemove) {
+                    pathsToRemove.push(index);
+                }
+            });
+
+            // Remove paths in reverse order to maintain indices
+            pathsToRemove.reverse().forEach(index => {
+                glyphs[currentGlyph].splice(index, 1);
+                if (wigglySeeds[currentGlyph] && wigglySeeds[currentGlyph][index] !== undefined) {
+                    wigglySeeds[currentGlyph].splice(index, 1);
+                }
+            });
+
+            redrawGlyph();
+        }
+
+        function isPointNearLine(px, py, x1, y1, x2, y2, thresholdSq) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            let param = -1;
+
+            if (lenSq !== 0) param = dot / lenSq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            } else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            } else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = px - xx;
+            const dy = py - yy;
+            return dx * dx + dy * dy < thresholdSq;
+        }
+
+        function drawPath(path, index) {
+            ctx.save();
+
+            ctx.strokeStyle = path.color;
+            ctx.lineWidth = path.thickness;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            switch (path.type) {
+                case 'line':
+                    ctx.beginPath();
+                    ctx.moveTo(path.x1, path.y1);
+                    ctx.lineTo(path.x2, path.y2);
+                    ctx.stroke();
+                    break;
+
+                case 'star':
+                    const spikes = 5;
+                    const rotation = Math.PI / 2 * 3;
+
+                    ctx.beginPath();
+                    ctx.moveTo(path.x, path.y - path.radius);
+
+                    for (let i = 0; i < spikes; i++) {
+                        const angle = rotation + i * Math.PI * 2 / spikes;
+
+                        const innerX = path.x + Math.cos(angle) * path.radius/2;
+                        const innerY = path.y + Math.sin(angle) * path.radius/2;
+                        ctx.lineTo(innerX, innerY);
+
+                        const outerAngle = angle + Math.PI / spikes;
+                        const outerX = path.x + Math.cos(outerAngle) * path.radius;
+                        const outerY = path.y + Math.sin(outerAngle) * path.radius;
+                        ctx.lineTo(outerX, outerY);
+                    }
+
+                    ctx.closePath();
+                    ctx.stroke();
+                    break;
+
+                case 'wiggly':
+                    ctx.beginPath();
+                    ctx.moveTo(path.points[0].x, path.points[0].y);
+
+                    for (let i = 1; i < path.points.length; i++) {
+                        ctx.lineTo(path.points[i].x, path.points[i].y);
+                    }
+
+                    ctx.stroke();
+                    break;
+            }
+
+            ctx.restore();
+        }
+
+        // Convert stroke to filled outline
+        function strokeToOutline(x1, y1, x2, y2, thickness) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            
+            if (len === 0) return null;
+            
+            const nx = -dy / len;
+            const ny = dx / len;
+            const halfThickness = thickness / 2;
+            
+            // Create rectangle around line
+            const outline = [
+                { x: x1 + nx * halfThickness, y: y1 + ny * halfThickness },
+                { x: x2 + nx * halfThickness, y: y2 + ny * halfThickness },
+                { x: x2 - nx * halfThickness, y: y2 - ny * halfThickness },
+                { x: x1 - nx * halfThickness, y: y1 - ny * halfThickness }
+            ];
+            
+            return outline;
+        }
+
+        // Convert canvas coordinates to font coordinates
+        function toFontCoords(x, y) {
+            const canvasWidth = canvas.width / (window.devicePixelRatio || 1);
+            const canvasHeight = canvas.height / (window.devicePixelRatio || 1);
+            
+            // Scale to font units (1000 units per em)
+            const scaleX = 1000 / canvasWidth;
+            const scaleY = 1000 / canvasHeight;
+            
+            return {
+                x: x * scaleX,
+                y: (canvasHeight - y) * scaleY // Flip Y axis
+            };
+        }
+
+        // Export font as TTF
+        function exportFont() {
+            updateStatus('Exporting font...', 'active');
+            const exportButton = document.getElementById('exportBtn');
+            const originalText = exportButton.textContent;
+            
+            // Show loading indicator
+            exportButton.innerHTML = '<span class="loading"></span> Exporting...';
+            exportButton.disabled = true;
+            
+            // Use setTimeout to allow UI to update before starting export
+            setTimeout(() => {
+                try {
+                    // Create font data
+                    const fontData = createFontData();
+                    
+                    // Create font using opentype.js
+                    const font = new opentype.Font(fontData);
+                    
+                    // Generate TTF buffer
+                    const buffer = font.toArrayBuffer();
+                    
+                    // Create blob and download link
+                    const blob = new Blob([buffer], { type: 'font/ttf' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Create download link
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${fontName}.ttf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        updateStatus('Font exported successfully!', 'active');
+                        
+                        // Reset button
+                        exportButton.textContent = originalText;
+                        exportButton.disabled = false;
+                    }, 100);
+                } catch (error) {
+                    console.error('Export error:', error);
+                    updateStatus('Export failed: ' + error.message, 'error');
+                    
+                    // Reset button
+                    exportButton.textContent = originalText;
+                    exportButton.disabled = false;
+                }
+            }, 100);
+        }
+
+        // Create font data for opentype.js
+        function createFontData() {
+            const fontData = {
+                familyName: fontName,
+                styleName: 'Regular',
+                unitsPerEm: 1000,
+                ascender: 800,
+                descender: -200,
+                glyphs: []
+            };
+
+            // Create notdef glyph (required)
+            const notdefPath = new opentype.Path();
+            notdefPath.moveTo(50, 0);
+            notdefPath.lineTo(50, 700);
+            notdefPath.lineTo(450, 700);
+            notdefPath.lineTo(450, 0);
+            notdefPath.close();
+            notdefPath.moveTo(100, 50);
+            notdefPath.lineTo(400, 50);
+            notdefPath.lineTo(400, 650);
+            notdefPath.lineTo(100, 650);
+            notdefPath.close();
+            
+            fontData.glyphs.push(new opentype.Glyph({
+                name: '.notdef',
+                unicode: 0,
+                path: notdefPath,
+                advanceWidth: 500
+            }));
+
+            // Create glyphs for each character
+            glyphList.forEach((char, index) => {
+                const paths = glyphs[char] || [];
+                const glyphPath = new opentype.Path();
+                
+                // Convert our paths to opentype paths with filled outlines
+                paths.forEach(path => {
+                    if (path.type === 'line') {
+                        // Convert line stroke to filled rectangle
+                        const outline = strokeToOutline(path.x1, path.y1, path.x2, path.y2, path.thickness);
+                        if (outline) {
+                            const p0 = toFontCoords(outline[0].x, outline[0].y);
+                            const p1 = toFontCoords(outline[1].x, outline[1].y);
+                            const p2 = toFontCoords(outline[2].x, outline[2].y);
+                            const p3 = toFontCoords(outline[3].x, outline[3].y);
+                            
+                            glyphPath.moveTo(p0.x, p0.y);
+                            glyphPath.lineTo(p1.x, p1.y);
+                            glyphPath.lineTo(p2.x, p2.y);
+                            glyphPath.lineTo(p3.x, p3.y);
+                            glyphPath.close();
+                        }
+                    } else if (path.type === 'wiggly') {
+                        // Convert wiggly line to series of filled rectangles
+                        for (let i = 0; i < path.points.length - 1; i++) {
+                            const p1 = path.points[i];
+                            const p2 = path.points[i + 1];
+                            const outline = strokeToOutline(p1.x, p1.y, p2.x, p2.y, path.thickness);
+                            
+                            if (outline) {
+                                const fp0 = toFontCoords(outline[0].x, outline[0].y);
+                                const fp1 = toFontCoords(outline[1].x, outline[1].y);
+                                const fp2 = toFontCoords(outline[2].x, outline[2].y);
+                                const fp3 = toFontCoords(outline[3].x, outline[3].y);
+                                
+                                glyphPath.moveTo(fp0.x, fp0.y);
+                                glyphPath.lineTo(fp1.x, fp1.y);
+                                glyphPath.lineTo(fp2.x, fp2.y);
+                                glyphPath.lineTo(fp3.x, fp3.y);
+                                glyphPath.close();
+                            }
+                        }
+                    } else if (path.type === 'star') {
+                        // Create a filled star path
+                        const spikes = 5;
+                        const rotation = Math.PI / 2 * 3;
+                        const outerRadius = path.radius;
+                        const innerRadius = path.radius / 2;
+                        
+                        const points = [];
+                        
+                        for (let i = 0; i < spikes * 2; i++) {
+                            const angle = rotation + i * Math.PI / spikes;
+                            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                            const x = path.x + Math.cos(angle) * radius;
+                            const y = path.y + Math.sin(angle) * radius;
+                            points.push(toFontCoords(x, y));
+                        }
+                        
+                        if (points.length > 0) {
+                            glyphPath.moveTo(points[0].x, points[0].y);
+                            for (let i = 1; i < points.length; i++) {
+                                glyphPath.lineTo(points[i].x, points[i].y);
+                            }
+                            glyphPath.close();
+                        }
+                    }
+                });
+                
+                // Create glyph
+                const glyph = new opentype.Glyph({
+                    name: char,
+                    unicode: char.charCodeAt(0),
+                    path: glyphPath,
+                    advanceWidth: 600
+                });
+                
+                fontData.glyphs.push(glyph);
+            });
+            
+            return fontData;
+        }
+    </script>
+</body>
+</html>

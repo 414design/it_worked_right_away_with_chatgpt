@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Iconify Studio – Pacman Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <!-- Pickr Color Picker CSS eingebunden -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
+  <style>
+  /* ===== PACMAN TOKENS ===== */
+  :root{
+    --yellow:#FFFF00; --cyan:#00FFFF; --magenta:#FF00FF; --green:#39FF14;
+    --bg:#000;
+    --user:var(--yellow);
+    --step:clamp(0.7rem, 1.2vw + 0.5rem, 1.2rem);
+    --t:all .2s cubic-bezier(.25,1,.5,1);
+  }
+  *,*::before,*::after{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Press Start 2P',cursive;
+    background:var(--bg);
+    color:var(--yellow);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:2vh 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 18px, #000 20px),
+      repeating-linear-gradient(90deg, transparent, transparent 18px, #000 20px);
+    position: relative;
+    overflow-x: hidden;
+  }
+  h1{font-size:calc(var(--step)*1.4); text-shadow:0 0 4px var(--cyan);}
+  p{font-size:var(--step); margin:.5em 0 1em; opacity:.8;}
+  /* ===== Karte wie Pacman-Map ===== */
+  .card{
+    width:min(90vw, 850px);
+    background:#0009;
+    border:6px solid var(--cyan);
+    border-radius:999px 999px 20px 20px;
+    padding:3.5rem 2rem 2rem;
+    margin:3vh 0;
+    box-shadow:0 0 12px var(--cyan), inset 0 0 8px var(--cyan);
+    transition:var(--t);
+    text-align: center;
+    position: relative;
+    z-index: 10;
+  }
+  header.card {
+    text-align: center;
+  }
+  /* Labels innerhalb der Karte positionieren */
+  label{
+    display:block; 
+    margin:1.5em 0 .5em; 
+    color:var(--magenta);
+    position: relative;
+  }
+  /* Input-Felder schmaler machen (max-width) */
+  .input-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+  }
+  .color-picker-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+  }
+  .pickr {
+    max-width: 400px;
+    width: 100%;
+  }
+  .pickr .pcr-button {
+    width: 100%;
+    height: 3rem;
+    border-radius: 8px;
+    border: 2px solid var(--yellow);
+    background: #000;
+    transition: var(--t);
+    box-shadow: 0 0 4px var(--yellow);
+  }
+  .pickr .pcr-button:hover,
+  .pickr .pcr-button:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+  }
+  /* Pickr Popup Styling */
+  .pcr-app {
+    background: #000 !important;
+    border: 2px solid var(--cyan) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 0 20px var(--cyan) !important;
+    font-family: 'Press Start 2P', cursive !important;
+  }
+  .pcr-app .pcr-interaction input {
+    background: #111 !important;
+    color: var(--yellow) !important;
+    border: 1px solid var(--yellow) !important;
+    border-radius: 4px !important;
+    font-family: 'Press Start 2P', cursive !important;
+    font-size: 0.7rem !important;
+  }
+  .pcr-app .pcr-interaction .pcr-result {
+    color: var(--yellow) !important;
+    border-color: var(--cyan) !important;
+  }
+  .pcr-app .pcr-interaction .pcr-save,
+  .pcr-app .pcr-interaction .pcr-cancel,
+  .pcr-app .pcr-interaction .pcr-clear {
+    background: var(--yellow) !important;
+    color: #000 !important;
+    border-radius: 6px !important;
+    font-family: 'Press Start 2P', cursive !important;
+    font-size: 0.6rem !important;
+    padding: 0.5em 1em !important;
+  }
+  .pcr-app .pcr-interaction .pcr-save:hover {
+    background: var(--cyan) !important;
+  }
+  input[type=text]{
+    max-width: 400px;
+    width:100%; 
+    padding:.75em 1em; 
+    border-radius:8px;
+    border:2px solid var(--yellow); 
+    background:#000;
+    color:var(--yellow); 
+    font-size:var(--step); 
+    transition:var(--t);
+  }
+  input[type=color]{height:3rem; cursor:pointer;}
+  input[type=text]:focus{
+    outline:none; border-color:var(--cyan); box-shadow:0 0 8px var(--cyan);
+  }
+  button{
+    margin-top:1em; 
+    max-width: 300px;
+    width:100%; 
+    padding:.7em; 
+    border:none;
+    border-radius:8px; 
+    background:var(--yellow); 
+    color:#000;
+    font-weight:700; 
+    font-size:calc(var(--step) * 0.85); 
+    cursor:pointer; 
+    transition:var(--t);
+    /* Button mittig ausrichten */
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  button:hover{background:var(--cyan); color:#000; box-shadow:0 0 12px var(--cyan);}
+  #results{
+    display:flex; gap:.5em; overflow-x:auto; padding:1em 0 1.5em;
+    scroll-snap-type:x mandatory; scrollbar-width:thin;
+  }
+  /* Icons in results werden animiert, außer wenn .selected Klasse */
+  #results svg{
+    flex:0 0 48px; width:48px; height:48px; fill:var(--user);
+    scroll-snap-align:start; cursor:pointer;
+    filter:drop-shadow(0 0 2px var(--cyan));
+    transition:var(--t);
+    animation:float 1.2s ease-in-out infinite alternate;
+  }
+  #results svg.selected {
+    animation: none;
+  }
+  #results svg:hover{transform:scale(1.15);}
+  #preview{
+    display:flex; justify-content:center; align-items:center;
+    min-height:120px; margin:1em 0;
+  }
+  /* Preview bleibt immer animiert */
+  #preview svg{
+    width:100px; height:100px; fill:var(--user);
+    filter:drop-shadow(0 0 4px var(--cyan));
+    animation:float 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes float{to{transform:translateY(-6px);}}
+  
+  /* Pacman-Canvas über die komplette Seite */
+  #pacmanCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    opacity: 0.15;
+    z-index: 1;
+    pointer-events: none;
+  }
+  
+  /* Footer kleiner und mit "made by gizem" */
+  footer{
+    margin-top:auto; 
+    padding:2em 1em 1em; 
+    font-size:calc(var(--step)*.55); 
+    color:var(--green);
+    text-align: center;
+    position: relative;
+    z-index: 10;
+  }
+  footer a{color:var(--cyan);}
+  .made-by {
+    margin-top: 1em;
+    font-size: calc(var(--step)*.7);
+    color: var(--magenta);
+  }
+  
+  /* Nudge Tutorial Styles hinzugefügt */
+  .tutorial-nudge {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.95);
+    border: 4px solid var(--cyan);
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-width: 280px;
+    box-shadow: 0 0 20px var(--cyan), inset 0 0 10px rgba(0, 255, 255, 0.2);
+    z-index: 100;
+    animation: slideIn 0.5s ease-out;
+  }
+  
+  @keyframes slideIn {
+    from {
+      transform: translateY(-50%) translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(-50%) translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  .tutorial-nudge.hidden {
+    display: none;
+  }
+  
+  .tutorial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--magenta);
+  }
+  
+  .tutorial-title {
+    font-size: calc(var(--step) * 0.8);
+    color: var(--yellow);
+    text-shadow: 0 0 4px var(--yellow);
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--magenta);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    width: auto;
+    margin: 0;
+    line-height: 1;
+    transition: var(--t);
+  }
+  
+  .close-btn:hover {
+    color: var(--cyan);
+    text-shadow: 0 0 8px var(--cyan);
+    background: none;
+    box-shadow: none;
+  }
+  
+  .tutorial-step {
+    display: flex;
+    align-items: flex-start;
+    margin: 0.8rem 0;
+    gap: 0.8rem;
+  }
+  
+  .step-number {
+    flex-shrink: 0;
+    width: 1.8rem;
+    height: 1.8rem;
+    background: var(--yellow);
+    color: #000;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(var(--step) * 0.7);
+    font-weight: bold;
+  }
+  
+  .step-text {
+    font-size: calc(var(--step) * 0.6);
+    color: var(--cyan);
+    line-height: 1.4;
+  }
+  
+  @media (max-width: 768px) {
+    .tutorial-nudge {
+      right: 1rem;
+      left: 1rem;
+      max-width: none;
+      top: auto;
+      bottom: 1rem;
+      transform: none;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  }
+  </style>
+</head>
+<body>
+  <!-- Canvas für echtes Pacman-Spiel -->
+  <canvas id="pacmanCanvas"></canvas>
+
+  <!-- Tutorial Nudge hinzugefügt -->
+  <div class="tutorial-nudge" id="tutorialNudge">
+    <div class="tutorial-header">
+      <div class="tutorial-title">SO GEHT'S</div>
+      <button class="close-btn" id="closeNudge" aria-label="Schließen">✕</button>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-number">1</div>
+      <div class="step-text">Icon Wunsch eingeben</div>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-number">2</div>
+      <div class="step-text">Farbe auswählen & Save klicken</div>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-number">3</div>
+      <div class="step-text">Icon auswählen</div>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-number">4</div>
+      <div class="step-text">Downloaden</div>
+    </div>
+  </div>
+
+  <header class="card">
+    <h1>ICONIFY STUDIO</h1>
+    <p>PACMAN RETRO EDITION</p>
+  </header>
+
+  <main class="card">
+    <label for="search">Suche (z. B. ghost, star)</label>
+    <div class="input-wrapper">
+      <input id="search" type="text" placeholder="Icon suchen" autocomplete="off">
+    </div>
+
+    <label>Farbe</label>
+    <!-- Pickr Color Picker Container -->
+    <div class="color-picker-wrapper">
+      <div id="color-picker"></div>
+    </div>
+
+    <section id="results" aria-label="Suchergebnisse"></section>
+
+    <section id="preview" aria-live="polite"></section>
+
+    <button id="download" style="display:none;">DOWNLOAD SVG</button>
+  </main>
+
+  <footer>
+    <div>Icons via <a href="https://iconify.design" target="_blank">ICONIFY</a></div>
+    <div class="made-by">made by gizem ilgün</div>
+  </footer>
+
+<!-- Pickr Library eingebunden -->
+<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+
+<script>
+(() => {
+  const canvas = document.getElementById('pacmanCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  const maze = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,0,1,1,1,0,1,1,0,1,1,1,0,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,1],
+    [1,0,0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0,0,1],
+    [1,1,1,1,0,1,1,1,0,1,1,0,1,1,1,0,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,0,1,0,1,1,0,0,1,1,0,1,0,1,1,0,1],
+    [1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+    [1,1,1,1,0,1,1,1,0,1,1,0,1,1,1,0,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,0,1,1,1,0,1,1,0,1,1,1,0,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  ];
+  
+  let cellSize, offsetX, offsetY;
+  
+  function updateCanvasSize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cellSize = Math.min(canvas.width / maze[0].length, canvas.height / maze.length);
+    offsetX = (canvas.width - cellSize * maze[0].length) / 2;
+    offsetY = (canvas.height - cellSize * maze.length) / 2;
+  }
+  
+  updateCanvasSize();
+  
+  window.addEventListener('resize', () => {
+    updateCanvasSize();
+  });
+  
+  window.selectedIconSVG = null;
+  
+  window.updatePacmanIcon = function(hasIcon) {
+    window.selectedIconSVG = hasIcon;
+  };
+  
+  const dots = [];
+  for (let y = 0; y < maze.length; y++) {
+    for (let x = 0; x < maze[y].length; x++) {
+      if (maze[y][x] === 0) {
+        dots.push({ x: x + 0.5, y: y + 0.5, active: true });
+      }
+    }
+  }
+  
+  // Pacman-Spieler
+  const pacman = {
+    x: 1,
+    y: 1,
+    direction: 0,
+    mouthOpen: 0,
+    speed: 0.02
+  };
+  
+  // Geister
+  const ghosts = [
+    { x: 9, y: 7, color: '#FF0000', dx: 0.015, dy: 0 },
+    { x: 10, y: 7, color: '#FFB8FF', dx: -0.015, dy: 0 },
+    { x: 9, y: 8, color: '#00FFFF', dx: 0, dy: 0.015 },
+  ];
+  
+  function drawMaze() {
+    for (let y = 0; y < maze.length; y++) {
+      for (let x = 0; x < maze[y].length; x++) {
+        if (maze[y][x] === 1) {
+          ctx.fillStyle = '#0066FF';
+          ctx.fillRect(
+            offsetX + x * cellSize,
+            offsetY + y * cellSize,
+            cellSize,
+            cellSize
+          );
+        }
+      }
+    }
+  }
+  
+  function drawDots() {
+    dots.forEach(dot => {
+      if (dot.active) {
+        const x = offsetX + dot.x * cellSize;
+        const y = offsetY + dot.y * cellSize;
+        
+        if (window.selectedIconSVG) {
+          // Icon als farbigen Kreis darstellen
+          ctx.fillStyle = '#FFD700';
+          ctx.strokeStyle = '#FFF';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(x, y, cellSize * 0.15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          // Fallback: normale Punkte
+          ctx.fillStyle = '#FFD700';
+          ctx.beginPath();
+          ctx.arc(x, y, cellSize * 0.1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    });
+  }
+  
+  function drawPacman() {
+    const x = offsetX + (pacman.x + 0.5) * cellSize;
+    const y = offsetY + (pacman.y + 0.5) * cellSize;
+    const radius = cellSize * 0.4;
+    
+    pacman.mouthOpen = (pacman.mouthOpen + 0.1) % (Math.PI * 2);
+    const mouthAngle = Math.abs(Math.sin(pacman.mouthOpen)) * 0.3;
+    
+    const angle = pacman.direction * Math.PI / 2;
+    
+    ctx.fillStyle = '#FFFF00';
+    ctx.beginPath();
+    ctx.arc(x, y, radius, angle + mouthAngle, angle + Math.PI * 2 - mouthAngle);
+    ctx.lineTo(x, y);
+    ctx.fill();
+  }
+  
+  function drawGhosts() {
+    ghosts.forEach(ghost => {
+      const x = offsetX + (ghost.x + 0.5) * cellSize;
+      const y = offsetY + (ghost.y + 0.5) * cellSize;
+      const radius = cellSize * 0.4;
+      
+      ctx.fillStyle = ghost.color;
+      ctx.beginPath();
+      ctx.arc(x, y - radius * 0.2, radius, Math.PI, 0);
+      ctx.lineTo(x + radius, y + radius * 0.4);
+      ctx.lineTo(x + radius * 0.6, y + radius * 0.2);
+      ctx.lineTo(x + radius * 0.2, y + radius * 0.4);
+      ctx.lineTo(x, y + radius * 0.2);
+      ctx.lineTo(x - radius * 0.2, y + radius * 0.4);
+      ctx.lineTo(x - radius * 0.6, y + radius * 0.2);
+      ctx.lineTo(x - radius, y + radius * 0.4);
+      ctx.lineTo(x - radius, y);
+      ctx.fill();
+      
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(x - radius * 0.3, y - radius * 0.1, radius * 0.2, 0, Math.PI * 2);
+      ctx.arc(x + radius * 0.3, y - radius * 0.1, radius * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#0000FF';
+      ctx.beginPath();
+      ctx.arc(x - radius * 0.3, y - radius * 0.1, radius * 0.1, 0, Math.PI * 2);
+      ctx.arc(x + radius * 0.3, y - radius * 0.1, radius * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+  
+  function canMove(x, y) {
+    const col = Math.floor(x);
+    const row = Math.floor(y);
+    if (row < 0 || row >= maze.length || col < 0 || col >= maze[0].length) {
+      return false;
+    }
+    return maze[row][col] === 0;
+  }
+  
+  function updatePacman() {
+    const dirX = [1, 0, -1, 0][pacman.direction];
+    const dirY = [0, 1, 0, -1][pacman.direction];
+    
+    const newX = pacman.x + dirX * pacman.speed;
+    const newY = pacman.y + dirY * pacman.speed;
+    
+    if (canMove(newX, newY)) {
+      pacman.x = newX;
+      pacman.y = newY;
+    } else {
+      pacman.direction = Math.floor(Math.random() * 4);
+    }
+    
+    if (pacman.x < 0) pacman.x = maze[0].length - 1;
+    if (pacman.x >= maze[0].length) pacman.x = 0;
+    
+    dots.forEach(dot => {
+      if (dot.active) {
+        const dist = Math.sqrt(
+          Math.pow(pacman.x + 0.5 - dot.x, 2) + Math.pow(pacman.y + 0.5 - dot.y, 2)
+        );
+        if (dist < 0.5) {
+          dot.active = false;
+        }
+      }
+    });
+  }
+  
+  function updateGhosts() {
+    ghosts.forEach(ghost => {
+      const newX = ghost.x + ghost.dx;
+      const newY = ghost.y + ghost.dy;
+      
+      if (canMove(newX, newY)) {
+        ghost.x = newX;
+        ghost.y = newY;
+      } else {
+        if (Math.random() > 0.5) {
+          ghost.dx = (Math.random() - 0.5) * 0.03;
+          ghost.dy = 0;
+        } else {
+          ghost.dx = 0;
+          ghost.dy = (Math.random() - 0.5) * 0.03;
+        }
+      }
+    });
+  }
+  
+  function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    drawMaze();
+    drawDots();
+    drawGhosts();
+    drawPacman();
+    
+    updatePacman();
+    updateGhosts();
+    
+    requestAnimationFrame(gameLoop);
+  }
+  
+  gameLoop();
+})();
+(() => {
+  const nudge = document.getElementById('tutorialNudge');
+  const closeBtn = document.getElementById('closeNudge');
+  
+  closeBtn.addEventListener('click', () => {
+    nudge.classList.add('hidden');
+  });
+  
+  const $ = (s) => document.querySelector(s);
+  const searchInput = $('#search');
+  const resultsBox = $('#results');
+  const previewBox = $('#preview');
+  const downloadBtn = $('#download');
+
+  const pickr = Pickr.create({
+    el: '#color-picker',
+    theme: 'nano',
+    default: '#FFFF00',
+    swatches: [
+      '#FFFF00',
+      '#00FFFF',
+      '#FF00FF',
+      '#39FF14',
+      '#FF0000',
+      '#FFA500',
+      '#FFFFFF'
+    ],
+    components: {
+      preview: true,
+      opacity: false,
+      hue: true,
+      interaction: {
+        hex: true,
+        rgba: false,
+        hsla: false,
+        hsva: false,
+        cmyk: false,
+        input: true,
+        clear: false,
+        save: true
+      }
+    }
+  });
+
+  const setColor = (c) => document.documentElement.style.setProperty('--user', c);
+  
+  const updateAllResultIcons = (color) => {
+    const resultIcons = resultsBox.querySelectorAll('svg');
+    resultIcons.forEach(svg => {
+      const fills = svg.querySelectorAll('[fill]');
+      const strokes = svg.querySelectorAll('[stroke]');
+      fills.forEach(el => el.setAttribute('fill', color));
+      strokes.forEach(el => el.setAttribute('stroke', color));
+    });
+  };
+  
+  pickr.on('save', (color) => {
+    const hexColor = color.toHEXA().toString();
+    setColor(hexColor);
+    updateAllResultIcons(hexColor);
+    pickr.hide();
+  });
+  
+  pickr.on('change', (color) => {
+    const hexColor = color.toHEXA().toString();
+    setColor(hexColor);
+    updateAllResultIcons(hexColor);
+  });
+
+  setColor('#FFFF00');
+
+  const cache = window.sessionStorage;
+  const cached = (k) => cache.getItem(k) ? JSON.parse(cache.getItem(k)) : null;
+  const store = (k, v) => cache.setItem(k, JSON.stringify(v));
+
+  const translate = async (de) => {
+    const key = `t_${de}`;
+    if (cached(key)) return cached(key);
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(de)}&langpair=de|en`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      const en = data.responseData?.translatedText?.split(' ')[0]?.toLowerCase() || de;
+      store(key, en);
+      return en;
+    } catch {
+      return de;
+    }
+  };
+
+  const searchIcons = async (term, limit = 20) => {
+    const url = `https://api.iconify.design/search?query=${encodeURIComponent(term)}&limit=${limit}`;
+    const key = `s_${term}_${limit}`;
+    if (cached(key)) return cached(key);
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const list = data.icons || [];
+    store(key, list);
+    return list;
+  };
+
+  const fetchSVG = async (prefix, name) => {
+    const url = `https://api.iconify.design/${prefix}/${name}.svg`;
+    const key = `i_${prefix}_${name}`;
+    if (cached(key)) return cached(key);
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const text = await res.text();
+    store(key, text);
+    return text;
+  };
+
+  const recolor = (svg, color) => {
+    return svg.replace(/fill="[^"]*"/g, `fill="${color}"`).replace(/stroke="[^"]*"/g, `stroke="${color}"`);
+  };
+
+  let currentSVG = '';
+  const showPreview = async (prefix, name, clickedElement) => {
+    previewBox.innerHTML = '<small>Lädt …</small>';
+    downloadBtn.style.display = 'none';
+    const svg = await fetchSVG(prefix, name);
+    if (!svg) {
+      previewBox.innerHTML = '<small>Nicht gefunden</small>';
+      return;
+    }
+    currentSVG = recolor(svg, pickr.getColor().toHEXA().toString());
+    previewBox.innerHTML = currentSVG;
+    const svgEl = previewBox.querySelector('svg');
+    svgEl.setAttribute('width', '100');
+    svgEl.setAttribute('height', '100');
+    downloadBtn.style.display = 'block';
+    
+    document.querySelectorAll('#results svg').forEach(s => s.classList.remove('selected'));
+    if (clickedElement) {
+      clickedElement.classList.add('selected');
+    }
+    
+    if (window.updatePacmanIcon) {
+      window.updatePacmanIcon(true);
+    }
+  };
+
+  downloadBtn.addEventListener('click', () => {
+    if (!currentSVG) return;
+    const blob = new Blob([currentSVG], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `iconify-${searchInput.value.trim() || 'icon'}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  let t;
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(t);
+    t = setTimeout(async () => {
+      const de = e.target.value.trim();
+      if (!de) {
+        resultsBox.innerHTML = '';
+        return;
+      }
+      resultsBox.innerHTML = '<small>Übersetzen & Suchen …</small>';
+      const en = await translate(de);
+      const icons = await searchIcons(en);
+      resultsBox.innerHTML = '';
+      if (!icons.length) {
+        resultsBox.innerHTML = '<small>Keine Treffer</small>';
+        return;
+      }
+      const currentColor = pickr.getColor().toHEXA().toString();
+      icons.forEach(async (id) => {
+        const [prefix, name] = id.split(':');
+        const svg = await fetchSVG(prefix, name);
+        if (!svg) return;
+        const colored = recolor(svg, currentColor);
+        const wrap = document.createElement('div');
+        wrap.innerHTML = colored;
+        const el = wrap.querySelector('svg');
+        el.setAttribute('width', '48');
+        el.setAttribute('height', '48');
+        el.setAttribute('aria-label', name);
+        el.addEventListener('click', () => showPreview(prefix, name, el));
+        resultsBox.appendChild(el);
+      });
+    }, 400);
+  });
+
+  searchInput.value = 'ghost';
+  searchInput.dispatchEvent(new Event('input'));
+})();
+</script>
+</body>
+</html>

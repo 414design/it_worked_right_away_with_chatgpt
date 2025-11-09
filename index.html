@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>It worked right away with ChatGPT</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f5f5f5;
+                overflow: hidden;
+                position: relative;
+                height: 100vh;
+            }
+            .background {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(255, 255, 255, 0.9);
+                z-index: -1;
+                padding: 5vmin;
+                box-sizing: border-box;
+                text-align: left;
+                display: block;
+                overflow: hidden;
+            }
+            .background h1 {
+                font-size: clamp(6rem, 11vw, 16rem);
+                line-height: 1;
+                color: #000;
+                margin-top: 0;
+                margin-bottom: 2vmin;
+            }
+            .background p {
+                font-size: 1em;
+                line-height: 1.3;
+                letter-spacing: 0.02em;
+                color: #000;
+                max-width: 80vw;
+                margin: 0;
+                position: absolute;
+                bottom: 5vmin;
+                left: 6vmin;
+            }
+            .card-container {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .card {
+                width: 320px;
+                background-color: white;
+                border: 1px solid black;
+                border-radius: 0;
+                box-shadow: none;
+                margin: 10px;
+                overflow: hidden;
+                position: absolute;
+                cursor: move;
+                user-select: none;
+                touch-action: none;
+                box-sizing: border-box;
+            }
+            .card:hover {
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            }
+            .card img {
+                width: 320px;
+                height: 200px;
+                object-fit: cover;
+                display: block;
+            }
+            .card-content {
+                padding: 10px 15px;
+                display: none;
+            }
+            .card.active .card-content {
+                display: block;
+            }
+            .card h3 {
+                margin: 10px 0 5px 0;
+                font-size: 1.2em;
+            }
+            .card p {
+                margin: 5px 0;
+                font-size: 0.9em;
+                color: #000;
+            }
+            .card .author {
+                font-style: italic;
+                color: #000;
+            }
+            .card-button {
+                display: block;
+                width: 100%;
+                margin: 16px 0px 8px 0px;
+                padding: 8px;
+                background-color: white;
+                color: black;
+                border: 1px solid black;
+                border-radius: 5px;
+                cursor: pointer;
+                text-align: center;
+                text-decoration: none;
+                box-sizing: border-box;
+            }
+            .card-button:hover {
+                background-color: black;
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="background">
+            <h1>It worked right away with ChatGPT</h1>
+            <p>
+                Why do we so often choose the easy way? “It worked right away
+                with ChatGPT” is a design toolkit and experiment that uses AI
+                and vibe coding to expand creative possibilities—without any
+                proprietary, closed models. Developed by students at Darmstadt
+                University of Applied Sciences, it proves that open language
+                models can empower designers and enable novel approaches. A call
+                to use AI not just for convenience, but consciously.
+            </p>
+        </div>
+        <div class="card-container" id="cardContainer">
+            <!-- Cards will be inserted here by JavaScript -->
+        </div>
+        <script>
+            const cardsData = [
+                {
+                    id: 1,
+                    headline: "fontedd_brutalisttextmaker",
+                    author: "Anna Schnabel",
+                    description:
+                        "Description for fontedd_brutalisttextmaker: a texteditor where you can draw a font and export it as a TTF-file. Its made with Qwen/Qwen3-Coder-480B-A35B-Instruct, and for a functioning export Sonnet 4.5. It uses the Google Font (Share Tech Mono) and for the export a opentype.js CDN.",
+                    screenshot: "img/fontedd_brutalisttextmaker.png",
+                    link: "tools/fontedd_brutalisttextmaker.html",
+                },
+                {
+                    id: 2,
+                    headline: "The Web Canvas",
+                    author: "Aron Breuer",
+                    description:
+                        "„The Web Canvas“ is a Brand Kit Validation Tool to test your colors and fonts against web standards and provides a real-time website mockup preview. Initial code generated by Qwen3/WebCoding and fine-tuned with Google Gemini.",
+                    screenshot: "img/the_web_canvas.png",
+                    link: "tools/the_web_canvas.html",
+                },
+                {
+                    id: 3,
+                    headline: "Color Playground",
+                    author: "Catalina Buhs",
+                    description:
+                        "A responsive HSL color playground web app built with Kimi by Moonshot AI that manipulates, saves, and exports color palettes using pure HTML/CSS/JavaScript.",
+                    screenshot: "img/color_playground.png",
+                    link: "tools/color_playground.html",
+                },
+                {
+                    id: 4,
+                    headline: "distorted typography",
+                    author: "elizaveta kircaglo",
+                    description:
+                        'Distorted Typography is an interactive web app that allows users to experiment and distort text in real time. Users can customize text attributes such as font, size, weight, letter spacing, scaling, rotation, and color, as well as apply special effects like pixelation and liquid "melt" distortions. It’s designed for creative typography experiments, digital art, and motion graphic concepts. The tool provides live preview rendering, along with options to export the final result as SVG or PNG, or copy the corresponding CSS. Being programmed with HTML, CSS and JavaScript, using the model DeepSeek-V3.1 and aya-expanse-32b on HuggingChat, it also integrates external sources like free fonts from Google Fonts.',
+                    screenshot: "img/distorted_typography.png",
+                    link: "tools/distorted_typography.html",
+                },
+                {
+                    id: 5,
+                    headline: "Prompt Architect",
+                    author: "Emir",
+                    description:
+                        "Prompt Architect is a fully interactive web-based interface. It functions as a modular master prompt builder for image-generation and creative-AI tools such as Midjourney, Stable Diffusion, Flux, and ChatGPT Images. The app allows users to compose detailed, structured prompts through a visual interface with retro-desktop logic, including windows, dropdown menus, and contextual templates. Each module (Subject & Action, Environment, Composition, Lighting, etc.) contributes to building a clean, natural-language prompt optimized for cross-platform diffusion models. Development was guided and refined using open and assistive AI systems, including Gemma (Google’s open model family), GPT-OSS frameworks, and community-distilled Claude-style models",
+                    screenshot: "img/prompt-architect.png",
+                    link: "tools/prompt-architect.html",
+                },
+                {
+                    id: 6,
+                    headline: "Iconify Studio",
+                    author: "Gizem",
+                    description:
+                        "A web-based icon generator inspired by classic Pacman aesthetics. Combines the Iconify framework with nostalgic retro design, using HTML5, CSS3, and Vanilla JavaScript. It integrates external icon databases and Google Fonts for a vibrant neon look.",
+                    screenshot: "img/iconifystudio.png",
+                    link: "tools/iconifystudio.html",
+                },
+                {
+                    id: 7,
+                    headline: "Dithermaster",
+                    author: "Jonathan Hasse",
+                    description:
+                        "The Dithermaster is an easy to use image dithering tool. It is straightforward and produces beautiful, high resolution results. Dithermaster was made with DeepSeek-R1-0528. The tool uses a linked Google Font and some JavaScript for the import, image editing and export.",
+                    screenshot: "img/dithermaster.png",
+                    link: "tools/dithermaster.html",
+                },
+                {
+                    id: 8,
+                    headline: "Breathe",
+                    author: "Julia Schöler",
+                    description:
+                        "We are designers to make stuff. But to make a Job out of it, you have to make stuff for others. Sounds manageable till now… The Problem: Others have expectations and give horrible feedback and Ideas on your project – feedback you definitely don’t need. My application is a place of solitude. It’s you, the canvas and positive feedback without exception. I have tried different models and have been in a never-ending vicious cycle with layout and functionality. My final code was puzzled together with experiences on Jan.ai with e.g. Qwen3-0_6B-IQ4_XS (which worked out terribly, resorting me to the one and only chat gpt), then I used Kimi-K2-Instruct-0905 on Huggingchat and had a small diy coding help from chat gpt after my credits on Huggingchat ran out.",
+                    screenshot: "img/breathe.png",
+                    link: "tools/breathe.html",
+                },
+                {
+                    id: 9,
+                    headline: "Vibe Type",
+                    author: "Kaya Kapotas",
+                    description:
+                        "Vibe Type is an experimental tool that invites designers to create fonts from the bottom up and playfully break away from their usual ways of working. It was created using Vibe coding with the open source model DeepSeek-R1-0528 in HuggingChat.",
+                    screenshot: "img/vibe_type.png",
+                    link: "tools/vibe_type.html",
+                },
+                {
+                    id: 10,
+                    headline: "typomotion",
+                    author: "Lucie Nauke",
+                    description:
+                        "TypoMotion enables users to generate dynamic text animations in real time with customizable motion and style. It is designed with HTML, CSS and JavaScript, using the model openai/gpt-oss-20b on HuggingChat. It integrates gifshot.js and Google Fonts for rendering and typography.",
+                    screenshot: "img/typomotion.png",
+                    link: "tools/typomotion.html",
+                },
+                {
+                    id: 11,
+                    headline: "draw your mind",
+                    author: "Noura Eissa",
+                    description:
+                        "Draw your mind is a digital mindfulness and creativity tool designed to spark small, playful exercises that help users let go of perfectionism and overthinking. Built on HuggingChat Omni, it offers intuitive prompts that encourage self-expression and mindful creativity.",
+                    screenshot: "img/draw_your_mind.png",
+                    link: "tools/draw_your_mind.html",
+                },
+                {
+                    id: 12,
+                    headline: "the randominator",
+                    author: "Olivia Wilk",
+                    description:
+                        "A design tool that sparks creativity — perfect for overcoming art block, finding inspiration, or just playing around; check the boxes and see what you get.\n\nModels used:\n– deepseek-ai/DeepSeek-R1-0528\n– Qwen/Qwen3-Coder-480B-A35B-Instruct\n\nExternal dependencies:\n– html2canvas library (for jpg download)\n– Google Fonts (Space Mono – for proper font display)",
+                    screenshot: "img/the_randominator.png",
+                    link: "tools/the_randominator.html",
+                },
+                {
+                    id: 13,
+                    headline: "Frame2Frame Animation",
+                    author: "Senay Dogru",
+                    description:
+                        "The Frame2Frame Animation tool allows users to unleash their creativity and create short films. With the import button, you can also add images alongside your own drawings, making stop motion animations possible. The tool was developed using Kimi-K2-Instruct-0905 and Qwen/Qwen3-Coder-30B-A3B-Instruct (via HuggingChat), with Chatgpt assisting in the correct implementation of the export function. In addition, the tool uses an external font from Google Fonts: Annie Use Your Telescope. Feel free to try out the tool and create your own reality.",
+                    screenshot: "img/frame2frame_animation.png",
+                    link: "tools/frame2frame_animation.html",
+                },
+            ];
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            function createCard(card) {
+                const cardElement = document.createElement("div");
+                cardElement.className = "card";
+                cardElement.style.left = `${Math.random() * (window.innerWidth - 340)}px`;
+                cardElement.style.top = `${Math.random() * (window.innerHeight - 300)}px`;
+                cardElement.style.zIndex = "1";
+                cardElement.innerHTML = `
+                    <img src="${card.screenshot}" alt="${card.headline}">
+                    <div class="card-content">
+                        <h3>${card.headline}</h3>
+                        <p class="author">${card.author}</p>
+                        <p>${card.description}</p>
+                        <a href="${card.link}" class="card-button" target="_blank">Open Tool</a>
+                    </div>
+                `;
+
+                cardElement.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (!e.target.classList.contains("card-button")) {
+                        const allCards = document.querySelectorAll(".card");
+                        allCards.forEach((c) => c.classList.remove("active"));
+                        cardElement.classList.add("active");
+                        const highestZIndex = Math.max(
+                            ...Array.from(allCards).map(
+                                (c) => parseInt(c.style.zIndex) || 1,
+                            ),
+                        );
+                        cardElement.style.zIndex = highestZIndex + 1;
+                    }
+                });
+
+                let offsetX,
+                    offsetY,
+                    isDragging = false;
+                cardElement.addEventListener("mousedown", (e) => {
+                    if (!e.target.classList.contains("card-button")) {
+                        isDragging = true;
+                        const rect = cardElement.getBoundingClientRect();
+                        offsetX = e.clientX - rect.left;
+                        offsetY = e.clientY - rect.top;
+                        cardElement.style.cursor = "grabbing";
+                        e.preventDefault();
+                        const allCards = document.querySelectorAll(".card");
+                        const highestZIndex = Math.max(
+                            ...Array.from(allCards).map(
+                                (c) => parseInt(c.style.zIndex) || 1,
+                            ),
+                        );
+                        cardElement.style.zIndex = highestZIndex + 1;
+                    }
+                });
+                document.addEventListener("mousemove", (e) => {
+                    if (isDragging) {
+                        cardElement.style.left = `${e.clientX - offsetX}px`;
+                        cardElement.style.top = `${e.clientY - offsetY}px`;
+                    }
+                });
+                document.addEventListener("mouseup", () => {
+                    isDragging = false;
+                    cardElement.style.cursor = "move";
+                });
+
+                return cardElement;
+            }
+
+            function initCards() {
+                const shuffledCards = shuffleArray([...cardsData]);
+                const container = document.getElementById("cardContainer");
+                shuffledCards.forEach((card) => {
+                    const cardElement = createCard(card);
+                    container.appendChild(cardElement);
+                });
+            }
+
+            // Hide all card contents when clicking the background (not a card)
+            document.addEventListener("click", (e) => {
+                if (!e.target.closest(".card")) {
+                    document
+                        .querySelectorAll(".card")
+                        .forEach((c) => c.classList.remove("active"));
+                }
+            });
+
+            window.onload = initCards;
+        </script>
+    </body>
+</html>

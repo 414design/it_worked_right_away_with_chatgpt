@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TypoMotion</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Roboto+Mono:wght@400;500&family=Playfair+Display:wght@700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* ================= VARIABLES ================= */
+:root {
+  --bg-color: #000;
+  --txt-color: #fff;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.15);
+  --glass-shadow: rgba(0, 0, 0, 0.25);
+  --glass-blur: blur(20px);
+  --primary-accent: #ffffff;
+  --hover-glow: rgba(255, 255, 255, 0.4);
+  --transition-duration: 0.4s;
+  --easing: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+body[data-theme='light'] {
+  --bg-color: #fff;
+  --txt-color: #000;
+  --glass-bg: rgba(0, 0, 0, 0.05);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --glass-highlight: rgba(0, 0, 0, 0.15);
+  --glass-shadow: rgba(255, 255, 255, 0.2);
+  --primary-accent: #000;
+  --hover-glow: rgba(0, 0, 0, 0.15);
+}
+
+/* ================= BASE STYLES ================= */
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg-color);
+  color: var(--txt-color);
+  overflow: hidden;
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+}
+
+/* ================= UI BAR ================= */
+#ui {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  border-radius: 15px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 100;
+  min-width: 360px;
+  box-sizing: border-box;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  transition: all 0.5s var(--easing);
+}
+#ui:hover { box-shadow: none; }
+
+/* ================= FORM ELEMENTS ================= */
+input, select, button, input[type=range] {
+  position: relative;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-sizing: border-box;
+  color: var(--txt-color);
+  letter-spacing: 0.15px;
+  transition: all var(--transition-duration) var(--easing);
+  outline: none;
+  cursor: pointer;
+  height: 40px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* FIX: Proper vertical alignment for text input */
+#txt {
+  min-width: 120px;
+  display: block;
+  line-height: normal;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Export button */
+#export { min-width: 90px; background: rgba(255, 255, 255, 0.08); }
+
+/* Range slider */
+input[type=range] {
+  padding: 0;
+  min-height: 6px;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* Placeholder text */
+input::placeholder { color: rgba(255, 255, 255, 0.7); font-weight: 400; }
+
+/* ================= HOVER & ACTIVE ================= */
+input:hover, select:hover, button:hover {
+  background: var(--glass-highlight);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px var(--glass-shadow), 0 0 0 1px var(--glass-highlight), 0 0 0 3px var(--hover-glow);
+}
+input:active, select:active, button:active { transform: translateY(0); transition: all 0.15s ease; box-shadow: 0 2px 8px var(--glass-shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.1); }
+input:focus, select:focus, button:focus { box-shadow: 0 0 0 3px var(--hover-glow), inset 0 0 0 1px rgba(255, 255, 255, 0.2); }
+
+/* ================= SELECT CUSTOMIZATION ================= */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 35px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='white' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 10px 6px;
+}
+body[data-theme='light'] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='black' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+}
+
+/* Range slider thumb */
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  background: var(--txt-color);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1), 0 3px 5px rgba(0,0,0,0.3);
+}
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.4), 0 5px 8px rgba(0,0,0,0.4);
+}
+
+/* Button icon */
+button i { margin-right: 8px; font-size: 14px; }
+
+/* ================= LIGHT-THEME FIXES ================= */
+body[data-theme='light'] input,
+body[data-theme='light'] select,
+body[data-theme='light'] button {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  box-shadow: none;
+}
+</style>
+</head>
+
+<body data-theme="dark">
+
+<div id="ui">
+  <input id="txt" type="text" placeholder="Enter Text" value="TypoMotion">
+  <select id="anim">
+    <option value="wave">Wave</option>
+    <option value="breath">Breath</option>
+    <option value="jitter">Jitter</option>
+    <option value="distort">Distortion</option>
+    <option value="typewriter">Typewriter</option>
+    <option value="flip">Flip</option>
+  </select>
+  <input id="intensity" type="range" min="0" max="100" step="1" value="50" title="Intensity">
+  <select id="font">
+    <option value="'Inter', sans-serif">Inter</option>
+    <option value="'Roboto Mono', monospace">Roboto Mono</option>
+    <option value="'Playfair Display', serif">Playfair</option>
+    <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+  </select>
+  <select id="bgColor">
+    <option value="dark" selected>Dark</option>
+    <option value="light">Light</option>
+  </select>
+  <button id="export"><i class="fas fa-download"></i>Export</button>
+</div>
+
+<script>
+/* ---------- Global State ---------- */
+let txt = "TypoMotion";
+let animType = "wave";
+let intensity = 0.5;                 
+let fontFamily = "'Inter', sans-serif";
+let cnv;
+let bgMode = 'dark';
+
+/* ---------- p5 Sketch ---------- */
+function setup(){
+  cnv = createCanvas(windowWidth, windowHeight);
+  cnv.style('display','block');
+  textAlign(CENTER, CENTER);
+  noStroke();
+}
+function windowResized(){ resizeCanvas(windowWidth, windowHeight); }
+
+function renderFrame(f, darkMode = true){
+  if (darkMode) { background(0); fill(255); } 
+  else { background(255); fill(0); }
+
+  textSize(96);
+  textFont(fontFamily);
+
+  const baseY = height/2;
+  const chars = txt.split('');
+  const total = chars.length;
+  const spacingMul = 1.0;
+  const charWidths = chars.map(ch => textWidth(ch) * spacingMul);
+  const totalWidth = charWidths.reduce((a,b)=>a+b,0);
+
+  let baseX = width/2 - totalWidth/2;
+  let offsetX = 0;
+
+  if (animType === 'flip'){
+    const maxAngle = PI/2;
+    const angle = sin(f*0.07) * intensity * maxAngle;
+    push();
+    translate(width/2, height/2);
+    rotate(angle);
+    translate(-width/2, -height/2);
+  }
+  if (animType === 'breath'){
+    const scaleAmt = 1 + sin(f*0.05) * intensity * 0.3;
+    push();
+    translate(width/2, height/2);
+    scale(scaleAmt);
+    translate(-width/2, -height/2);
+  }
+
+  let shownChars = total;
+  if (animType === 'typewriter'){
+    const framesPerLetter = 5;
+    shownChars = min(total, floor(f/framesPerLetter) % (total+1));
+  }
+
+  for(let i=0;i<total;i++){
+    if (animType === 'typewriter' && i >= shownChars) break;
+    const ch = chars[i];
+    const chW = charWidths[i];
+    let charX = baseX + offsetX + chW/2;
+    let offsetXDelta = 0;
+    let offsetYDelta = 0;
+    if (animType === 'wave'){ offsetYDelta = sin(f*0.1 + i*0.5) * intensity * 80; }
+    if (animType === 'distort'){
+      offsetXDelta += (noise(f*0.02 + i) - 0.5) * intensity * 100;
+      offsetYDelta += (noise(f*0.02 - i) - 0.5) * intensity * 100;
+    }
+    if (animType === 'jitter'){
+      const maxShake = intensity * 12;
+      offsetXDelta += random(-maxShake, maxShake);
+      offsetYDelta += random(-maxShake, maxShake);
+    }
+    text(ch, charX + offsetXDelta, baseY + offsetYDelta);
+    offsetX += chW;
+  }
+
+  if (animType === 'flip' || animType === 'breath') pop();
+}
+
+function draw(){ renderFrame(frameCount, bgMode === 'dark'); }
+
+document.getElementById('txt').addEventListener('input', e => { txt = e.target.value; });
+document.getElementById('anim').addEventListener('change', e => { animType = e.target.value; });
+document.getElementById('intensity').addEventListener('input', e => { intensity = e.target.value/100; });
+document.getElementById('font').addEventListener('change', e => { fontFamily = e.target.value; });
+
+const bgSelect = document.getElementById('bgColor');
+bgSelect.addEventListener('change', e => { 
+  bgMode = e.target.value;
+  document.body.dataset.theme = bgMode;
+});
+
+/* ---------- EXPORT ---------- */
+function dataURLToBlob(dataURL) {
+  const arr = dataURL.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while(n--) { u8arr[n] = bstr.charCodeAt(n); }
+  return new Blob([u8arr], {type:mime});
+}
+
+const exportBtn = document.getElementById('export');
+exportBtn.addEventListener('click', async () => {
+  if (exportBtn.disabled) return;
+  exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting…';
+  exportBtn.disabled = true;
+
+  try {
+    const fps = 30;
+    let totalFrames = animType === 'typewriter' ? txt.length * 5 : 60;
+    const frames = [];
+    const startFrame = frameCount;
+    noLoop();
+
+    for (let i = 0; i < totalFrames; i++){
+      renderFrame(startFrame + i, bgMode === 'dark');
+      frames.push(cnv.canvas.toDataURL('image/png'));
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    gifshot.createGIF({
+      images: frames,
+      gifWidth: width,
+      gifHeight: height,
+      interval: 1/fps,
+      numFrames: totalFrames,
+      loop: true,
+      progressCallback: (p) => {
+        exportBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Exporting… ${Math.round(p * 100)}%`;
+      }
+    }, function(obj){
+      loop();
+      if (!obj.error && obj.image){
+        const blob = dataURLToBlob(obj.image);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'TypoMotion.gif';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        console.error('GIF generation failed:', obj.error);
+        alert('GIF generation failed.');
+      }
+      exportBtn.innerHTML = '<i class="fas fa-download"></i> Export';
+      exportBtn.disabled = false;
+    });
+
+  } catch (err) {
+    console.error('Export error:', err);
+    alert('Export failed.');
+    loop();
+    exportBtn.innerHTML = '<i class="fas fa-download"></i> Export';
+    exportBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

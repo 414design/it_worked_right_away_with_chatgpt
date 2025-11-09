@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Playground</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.5s ease;
+            padding: 20px;
+            background: linear-gradient(135deg, #fafafa 0%, #f0f4f8 100%);
+            color: #2d3748;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+            /* FIXED: Increased max-width for desktop */
+            max-width: 700px; /* Changed from 500px to 700px */
+            width: 100%;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-align: center;
+            transition: color 0.5s ease;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+            opacity: 0.8;
+            font-size: 1.1em;
+            /* ALWAYS BLACK */
+            color: #000000 !important;
+        }
+
+        .color-controls {
+            margin-bottom: 30px;
+        }
+
+        .slider-group {
+            margin-bottom: 25px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            transition: color 0.5s ease;
+            font-size: 1.05em;
+            /* ALWAYS BLACK */
+            color: #000000 !important;
+        }
+
+        .slider-value {
+            background: rgba(106, 17, 203, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            /* ALWAYS BLACK */
+            color: #000000 !important;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(226, 232, 240, 0.6);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            border: 2px solid #6a11cb;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 15px rgba(106, 17, 203, 0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 2px solid #6a11cb;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 15px rgba(106, 17, 203, 0.3);
+        }
+
+        #hueSlider {
+            background: linear-gradient(to right, 
+                hsl(0, 100%, 50%), 
+                hsl(60, 100%, 50%), 
+                hsl(120, 100%, 50%), 
+                hsl(180, 100%, 50%), 
+                hsl(240, 100%, 50%), 
+                hsl(300, 100%, 50%), 
+                hsl(360, 100%, 50%));
+        }
+
+        #saturationSlider {
+            background: linear-gradient(to right, #808080, var(--current-hue, #ff0000));
+        }
+
+        #lightnessSlider {
+            background: linear-gradient(to right, #000, var(--current-hue, #808080), #fff);
+        }
+
+        .color-info {
+            background-color: transparent; /* Will be set by JS */
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            transition: all 0.4s ease;
+            border: 2px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-info::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            filter: blur(20px);
+            opacity: 0.3;
+            z-index: -1;
+            transition: all 0.5s ease;
+        }
+
+        .color-values {
+            display: grid;
+            /* FIXED: Better grid for desktop - 3 columns on larger screens */
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .color-value {
+            text-align: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .color-value:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .color-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+            font-weight: 600;
+            transition: color 0.5s ease;
+        }
+
+        .color-code {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .color-code:hover {
+            transform: scale(1.05);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap; /* Allow buttons to wrap */
+        }
+
+        button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            flex: 1; /* Make buttons flexible */
+            min-width: 120px; /* Minimum width for buttons */
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: width 0.5s ease;
+            z-index: -1;
+        }
+
+        button:hover::before {
+            width: 100%;
+        }
+
+        .btn-primary {
+            /* ELEGANT SOLID COLOR - Deep Charcoal */
+            background: #1a1a2e;
+            color: white;
+            box-shadow: 0 4px 15px rgba(26, 26, 46, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(26, 26, 46, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(237, 242, 247, 0.7);
+            color: #4a5568;
+            border: 1px solid rgba(226, 232, 240, 0.6);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(237, 242, 247, 0.9);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-export {
+            background: rgba(113, 128, 150, 0.8); /* Gray-500 with opacity */
+            color: white;
+            border: 1px solid rgba(113, 128, 150, 0.6);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-export:hover {
+            background: rgba(113, 128, 150, 0.95);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .modal-header h2 {
+            font-size: 1.5em;
+            color: #1a1a2e;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.8em;
+            color: #718096;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(226, 232, 240, 0.5);
+            color: #e53e3e;
+            transform: rotate(90deg);
+        }
+
+        .modal-colors-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .modal-color-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(247, 250, 252, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .modal-color-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-color-swatch {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-color-info {
+            font-size: 0.8em;
+            text-align: center;
+            color: #4a5568;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .modal-code-section {
+            margin-top: 20px;
+        }
+
+        .modal-code-label {
+            font-size: 0.9em;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .modal-code-block {
+            background: rgba(26, 32, 44, 0.9);
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .modal-code-block .comment {
+            color: #718096;
+        }
+
+        .modal-code-block .variable {
+            color: #63b3ed;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .modal-btn-primary {
+            background: #1a1a2e;
+            color: white;
+            flex: 1;
+        }
+
+        .modal-btn-primary:hover {
+            background: #2d3748;
+            transform: translateY(-2px);
+        }
+
+        .modal-btn-secondary {
+            background: rgba(237, 242, 247, 0.9);
+            color: #4a5568;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .modal-btn-secondary:hover {
+            background: rgba(226, 232, 240, 1);
+            transform: translateY(-2px);
+        }
+
+        /* SAVED COLORS - ALWAYS BLACK TEXT */
+        .saved-colors h3,
+        .saved-colors .empty-message {
+            color: #000000 !important;
+            transition: none !important;
+        }
+
+        .saved-colors h3 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .saved-colors h3::before {
+            content: '♥';
+            color: #e53e3e;
+            font-size: 1.2em;
+        }
+
+        .color-swatches {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            min-height: 50px;
+            align-items: center;
+        }
+
+        .color-swatch {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            z-index: 2;
+        }
+
+        .color-swatch::after {
+            content: '×';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #e53e3e;
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transform: scale(0.8);
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .color-swatch:hover::after {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(45, 55, 72, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* FIXED: Better responsive behavior */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px;
+                max-width: 90%; /* Allow more width on tablets */
+            }
+
+            .color-values {
+                grid-template-columns: 1fr; /* Stack on mobile/tablet */
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%; /* Full width buttons on mobile */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 25px;
+                max-width: 95%; /* Allow even more width on small phones */
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .modal-header h2 {
+                font-size: 1.2em;
+            }
+
+            .modal-colors-preview {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+        }
+
+        /* NEW: Desktop-specific styles */
+        @media (min-width: 769px) {
+            .container {
+                /* More breathing room on desktop */
+                padding: 50px;
+            }
+
+            .color-values {
+                /* 3 columns on desktop */
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .button-group {
+                /* Horizontal buttons on desktop */
+                flex-direction: row;
+            }
+        }
+
+        /* Add smooth transitions to all interactive elements */
+        .slider-group, .color-info, .color-value, button, .color-swatch {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Add subtle glow to interactive elements on hover */
+        button:hover, .color-swatch:hover {
+            filter: brightness(1.05);
+        }
+
+        /* Add subtle animation to color info on change */
+        .color-info.updating {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px currentColor;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Color Playground</h1>
+        <p class="subtitle">Play with colors and discover beautiful combinations</p>
+
+        <div class="color-controls">
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Hue</span>
+                    <span class="slider-value" id="hueValue">180</span>
+                </div>
+                <input type="range" id="hueSlider" min="0" max="360" value="180">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Saturation</span>
+                    <span class="slider-value" id="saturationValue">50</span>%
+                </div>
+                <input type="range" id="saturationSlider" min="0" max="100" value="50">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Lightness</span>
+                    <span class="slider-value" id="lightnessValue">50</span>%
+                </div>
+                <input type="range" id="lightnessSlider" min="0" max="100" value="50">
+            </div>
+        </div>
+
+        <div class="color-info" id="colorInfo">
+            <strong>Current Color</strong>
+            <div class="color-values">
+                <div class="color-value">
+                    <div class="color-label">HSL</div>
+                    <div class="color-code" id="hslValue">hsl(180, 50%, 50%)</div>
+                </div>
+                <div class="color-value">
+                    <div class="color-label">RGB</div>
+                    <div class="color-code" id="rgbValue">rgb(64, 191, 191)</div>
+                </div>
+                <div class="color-value">
+                    <div class="color-label">HEX</div>
+                    <div class="color-code" id="hexValue">#40bfbf</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" id="randomBtn">Random Color</button>
+            <button class="btn-secondary" id="saveBtn">Save Color</button>
+            <button class="btn-export" id="exportBtn">Export</button>
+        </div>
+
+        <div class="saved-colors">
+            <h3>Saved Colors</h3>
+            <div class="color-swatches" id="savedSwatches">
+                <div class="empty-message">No saved colors yet. Save your favorites!</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- EXPORT MODAL -->
+    <div class="modal-overlay" id="exportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Export Colors</h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            
+            <div class="modal-colors-preview" id="modalColorsPreview"></div>
+            
+            <div class="modal-code-section">
+                <div class="modal-code-label">CSS Code:</div>
+                <div class="modal-code-block" id="modalCodeBlock"></div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-primary" id="modalDownloadBtn">Download CSS</button>
+                <button class="modal-btn modal-btn-secondary" id="modalCopyBtn">Copy Code</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Color conversion functions
+        function hslToRgb(h, s, l) {
+            h /= 360;
+            s /= 100;
+            l /= 100;
+
+            const hue2rgb = (p, q, t) => {
+                if (t < 0) t += 1;
+                if (t > 1) t -= 1;
+                if (t < 1/6) return p + (q - p) * 6 * t;
+                if (t < 1/2) return q;
+                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                return p;
+            };
+
+            let r, g, b;
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+
+        function hslToHex(h, s, l) {
+            const rgb = hslToRgb(h, s, l);
+            return rgbToHex(rgb.r, rgb.g, rgb.b);
+        }
+
+        // Get contrasting color for text
+        function getContrastColor(l) {
+            return l > 50 ? '#000000' : '#ffffff';
+        }
+
+        // Get luminance for better contrast calculation
+        function getLuminance(r, g, b) {
+            const rsRGB = r / 255;
+            const gsRGB = g / 255;
+            const bsRGB = b / 255;
+
+            const rLinear = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
+            const gLinear = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
+            const bLinear = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
+
+            return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
+        }
+
+        function getContrastColorFromRgb(r, g, b) {
+            const luminance = getLuminance(r, g, b);
+            return luminance > 0.179 ? '#000000' : '#ffffff';
+        }
+
+        // App state
+        let currentColor = {
+            h: 180,
+            s: 50,
+            l: 50
+        };
+
+        let savedColors = JSON.parse(localStorage.getItem('savedColors') || '[]');
+
+        // MODAL STATE
+        let modalCSS = '';
+        let modalColors = [];
+
+        // DOM elements
+        const elements = {
+            body: document.body,
+            container: document.querySelector('.container'),
+            hueSlider: document.getElementById('hueSlider'),
+            saturationSlider: document.getElementById('saturationSlider'),
+            lightnessSlider: document.getElementById('lightnessSlider'),
+            hueValue: document.getElementById('hueValue'),
+            saturationValue: document.getElementById('saturationValue'),
+            lightnessValue: document.getElementById('lightnessValue'),
+            hslValue: document.getElementById('hslValue'),
+            rgbValue: document.getElementById('rgbValue'),
+            hexValue: document.getElementById('hexValue'),
+            randomBtn: document.getElementById('randomBtn'),
+            saveBtn: document.getElementById('saveBtn'),
+            exportBtn: document.getElementById('exportBtn'),
+            savedSwatches: document.getElementById('savedSwatches'),
+            toast: document.getElementById('toast'),
+            colorInfo: document.getElementById('colorInfo'),
+            modal: document.getElementById('exportModal'),
+            modalClose: document.getElementById('modalClose'),
+            modalColorsPreview: document.getElementById('modalColorsPreview'),
+            modalCodeBlock: document.getElementById('modalCodeBlock'),
+            modalDownloadBtn: document.getElementById('modalDownloadBtn'),
+            modalCopyBtn: document.getElementById('modalCopyBtn')
+        };
+
+        // Update color display
+        function updateColor() {
+            const { h, s, l } = currentColor;
+            const rgb = hslToRgb(h, s, l);
+            const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+            const hslString = `hsl(${h}, ${s}%, ${l}%)`;
+            const rgbString = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+            const hexString = hex;
+
+            // Update background color
+            elements.body.style.backgroundColor = hslString;
+            
+            // Update color info background with current color
+            elements.colorInfo.style.backgroundColor = hslString;
+            elements.colorInfo.style.borderColor = `hsl(${h}, ${s}%, ${Math.max(0, l - 20)}%)`;
+            
+            // Update text colors based on contrast
+            const textColor = getContrastColorFromRgb(rgb.r, rgb.g, rgb.b);
+            
+            elements.body.style.color = textColor;
+            elements.container.style.color = textColor;
+            
+            // Update all text elements to black/white based on contrast
+            document.querySelectorAll('h1, .color-label').forEach(el => {
+                el.style.color = textColor;
+            });
+            
+            // SAVED COLORS SECTION ALWAYS BLACK
+            document.querySelectorAll('.subtitle, .slider-label, .slider-value').forEach(el => {
+                el.style.color = '#000000';
+            });
+            
+            // Update values with accent color
+            const accentColor = textColor === '#ffffff' ? '#ffd700' : '#6a11cb';
+            document.querySelectorAll('.color-code').forEach(el => {
+                el.style.color = accentColor;
+            });
+            
+            // Update color info section text
+            elements.colorInfo.querySelector('strong').style.color = textColor;
+            
+            // Add subtle animation effect
+            elements.colorInfo.classList.add('updating');
+            setTimeout(() => {
+                elements.colorInfo.classList.remove('updating');
+            }, 500);
+            
+            // Update color codes
+            elements.hslValue.textContent = hslString;
+            elements.rgbValue.textContent = rgbString;
+            elements.hexValue.textContent = hexString;
+
+            // Update saturation slider background
+            elements.saturationSlider.style.background = `linear-gradient(to right, #808080, hsl(${h}, 100%, 50%))`;
+            
+            // Update lightness slider background
+            elements.lightnessSlider.style.background = `linear-gradient(to right, #000, hsl(${h}, ${s}%, 50%), #fff)`;
+
+            // Update CSS variable for hue
+            document.documentElement.style.setProperty('--current-hue', `hsl(${h}, 100%, 50%)`);
+        }
+
+        // Update slider values
+        function updateSliderValues() {
+            elements.hueValue.textContent = currentColor.h;
+            elements.saturationValue.textContent = currentColor.s;
+            elements.lightnessValue.textContent = currentColor.l;
+            
+            elements.hueSlider.value = currentColor.h;
+            elements.saturationSlider.value = currentColor.s;
+            elements.lightnessSlider.value = currentColor.l;
+        }
+
+        // Show toast notification
+        function showToast(message, duration = 2000) {
+            elements.toast.textContent = message;
+            elements.toast.classList.add('show');
+            setTimeout(() => {
+                elements.toast.classList.remove('show');
+            }, duration);
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            return navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!');
+            });
+        }
+
+        // Generate random color
+        function generateRandomColor() {
+            currentColor = {
+                h: Math.floor(Math.random() * 361),
+                s: Math.floor(Math.random() * 101),
+                l: Math.floor(Math.random() * 101)
+            };
+            updateSliderValues();
+            updateColor();
+            
+            // Add animation effect
+            elements.container.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                elements.container.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // Save current color
+        function saveColor() {
+            const { h, s, l } = currentColor;
+            const colorString = `hsl(${h}, ${s}%, ${l}%)`;
+            
+            // Check if color already exists
+            const exists = savedColors.some(color => color.h === h && color.s === s && color.l === l);
+            if (exists) {
+                showToast('Color already saved!');
+                return;
+            }
+
+            savedColors.push({ h, s, l });
+            localStorage.setItem('savedColors', JSON.stringify(savedColors));
+            
+            renderSavedColors();
+            showToast('Color saved!');
+            
+            // Add animation effect
+            elements.saveBtn.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                elements.saveBtn.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // EXPORT WITH VISUAL PREVIEW
+        function exportColors() {
+            if (savedColors.length === 0) {
+                showToast('No colors to export!');
+                return;
+            }
+
+            // Generate CSS with preview
+            let cssContent = '/* Color Playground - Exported Colors */\n:root {\n';
+            const colorsWithHex = savedColors.map((color, index) => {
+                const hex = hslToHex(color.h, color.s, color.l);
+                const hslString = `hsl(${color.h}, ${color.s}%, ${color.l}%)`;
+                cssContent += `  --color-${index + 1}: ${hex}; /* ${hslString} */\n`;
+                return { ...color, hex, hslString };
+            });
+            cssContent += '}\n\n/* Usage example */\n/* .my-element { background-color: var(--color-1); } */';
+
+            // Store for modal use
+            modalCSS = cssContent;
+            modalColors = colorsWithHex;
+
+            // Show modal with preview
+            showExportModal();
+        }
+
+        // SHOW EXPORT MODAL
+        function showExportModal() {
+            // Generate preview
+            elements.modalColorsPreview.innerHTML = modalColors.map((color, index) => `
+                <div class="modal-color-item">
+                    <div class="modal-color-swatch" style="background-color: ${color.hslString}"></div>
+                    <div class="modal-color-info">
+                        <div>Color ${index + 1}</div>
+                        <div>${color.hex}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Generate syntax-highlighted code
+            const highlightedCode = modalCSS
+                .replace(/(\/\*.*?\*\/)/g, '<span class="comment">$1</span>')
+                .replace(/(--color-\d+)/g, '<span class="variable">$1</span>');
+            
+            elements.modalCodeBlock.innerHTML = highlightedCode;
+
+            // Show modal
+            elements.modal.classList.add('show');
+        }
+
+        // HIDE EXPORT MODAL
+        function hideExportModal() {
+            elements.modal.classList.remove('show');
+        }
+
+        // DOWNLOAD CSS FROM MODAL
+        function downloadCSS() {
+            const blob = new Blob([modalCSS], { type: 'text/css' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'color-playground-colors.css';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('CSS file downloaded!');
+        }
+
+        // Render saved colors
+        function renderSavedColors() {
+            if (savedColors.length === 0) {
+                elements.savedSwatches.innerHTML = '<div class="empty-message">No saved colors yet. Save your favorites!</div>';
+                return;
+            }
+
+            elements.savedSwatches.innerHTML = savedColors.map((color, index) => {
+                const hslString = `hsl(${color.h}, ${color.s}%, ${color.l}%)`;
+                return `
+                    <div class="color-swatch" 
+                         style="background-color: ${hslString}" 
+                         data-index="${index}"
+                         title="HSL: ${hslString}">
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load saved color
+        function loadSavedColor(index) {
+            currentColor = { ...savedColors[index] };
+            updateSliderValues();
+            updateColor();
+            
+            // Add animation effect
+            elements.container.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+                elements.container.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // Delete saved color
+        function deleteSavedColor(index) {
+            savedColors.splice(index, 1);
+            localStorage.setItem('savedColors', JSON.stringify(savedColors));
+            renderSavedColors();
+            showToast('Color removed');
+        }
+
+        // Event listeners
+        elements.hueSlider.addEventListener('input', (e) => {
+            currentColor.h = parseInt(e.target.value);
+            elements.hueValue.textContent = currentColor.h;
+            updateColor();
+        });
+
+        elements.saturationSlider.addEventListener('input', (e) => {
+            currentColor.s = parseInt(e.target.value);
+            elements.saturationValue.textContent = currentColor.s;
+            updateColor();
+        });
+
+        elements.lightnessSlider.addEventListener('input', (e) => {
+            currentColor.l = parseInt(e.target.value);
+            elements.lightnessValue.textContent = currentColor.l;
+            updateColor();
+        });
+
+        elements.randomBtn.addEventListener('click', generateRandomColor);
+        elements.saveBtn.addEventListener('click', saveColor);
+        elements.exportBtn.addEventListener('click', exportColors);
+
+        // MODAL EVENT LISTENERS
+        elements.modalClose.addEventListener('click', hideExportModal);
+        elements.modalDownloadBtn.addEventListener('click', downloadCSS);
+        elements.modalCopyBtn.addEventListener('click', () => copyToClipboard(modalCSS));
+
+        // Close modal on outside click
+        elements.modal.addEventListener('click', (e) => {
+            if (e.target === elements.modal) {
+                hideExportModal();
+            }
+        });
+
+        // Copy color codes on click
+        elements.hslValue.addEventListener('click', () => copyToClipboard(elements.hslValue.textContent));
+        elements.rgbValue.addEventListener('click', () => copyToClipboard(elements.rgbValue.textContent));
+        elements.hexValue.addEventListener('click', () => copyToClipboard(elements.hexValue.textContent));
+
+        // Saved color swatch events
+        elements.savedSwatches.addEventListener('click', (e) => {
+            const swatch = e.target.closest('.color-swatch');
+            if (!swatch) return;
+
+            const index = parseInt(swatch.dataset.index);
+            
+            // Check for click on delete button area
+            const rect = swatch.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            // Delete button is in top-right corner
+            if (clickX > 30 && clickY < 20) {
+                e.stopPropagation();
+                deleteSavedColor(index);
+            } else {
+                // Clicked on the color itself
+                loadSavedColor(index);
+            }
+        });
+
+        // Initialize
+        updateColor();
+        updateSliderValues();
+        renderSavedColors();
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                generateRandomColor();
+            } else if (e.key === 's' && e.ctrlKey) {
+                e.preventDefault();
+                saveColor();
+            } else if (e.key === 'Escape') {
+                // Close modal with Escape key
+                hideExportModal();
+            }
+        });
+
+        // Add touch support for mobile
+        let touchStartY = 0;
+        elements.container.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        elements.container.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const deltaY = touchStartY - touchY;
+            
+            if (Math.abs(deltaY) > 50) {
+                // Swipe up or down to change lightness
+                const newLightness = Math.max(0, Math.min(100, currentColor.l + (deltaY > 0 ? -5 : 5)));
+                currentColor.l = newLightness;
+                updateSliderValues();
+                updateColor();
+                touchStartY = touchY;
+            }
+        });
+
+        // Add subtle animation to empty message
+        const observer = new MutationObserver(() => {
+            const emptyMessage = elements.savedSwatches.querySelector('.empty-message');
+            if (emptyMessage) {
+                emptyMessage.style.animation = 'fadeIn 0.5s ease';
+            }
+        });
+        observer.observe(elements.savedSwatches, { childList: true });
+
+        // Add fadeIn animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 0.6; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add hover effect to container
+        elements.container.addEventListener('mouseenter', () => {
+            elements.container.style.transform = 'translateY(-5px)';
+            elements.container.style.boxShadow = '0 12px 40px rgba(31, 38, 135, 0.15)';
+        });
+
+        elements.container.addEventListener('mouseleave', () => {
+            elements.container.style.transform = 'translateY(0)';
+            elements.container.style.boxShadow = '0 8px 32px rgba(31, 38, 135, 0.1)';
+        });
+    </script>
+</body>
+</html>

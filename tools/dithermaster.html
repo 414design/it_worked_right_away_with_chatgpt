@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Dithering Tool</title>
+    <style>
+        :root {
+            --retro-black: #121212;
+            --retro-dark: #222;
+            --retro-gray: #444;
+            --retro-white: #eaeaea;
+            --retro-yellow: #ffcc00;
+            --retro-yellow-dim: #d4a900;
+            --retro-border: #666;
+        }
+        .courier-prime-regular {
+            font-family: "Courier Prime", monospace;
+            font-weight: 400;
+            font-style: normal;
+            }
+
+        .courier-prime-bold {
+            font-family: "Courier Prime", monospace;
+            font-weight: 700;
+            font-style: normal;
+            }
+
+        .courier-prime-regular-italic {
+            font-family: "Courier Prime", monospace;
+            font-weight: 400;
+            font-style: italic;
+            }
+
+        .courier-prime-bold-italic {
+            font-family: "Courier Prime", monospace;
+            font-weight: 700;
+            font-style: italic;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier Prime', Courier, monospace;
+        }
+        
+        body {
+            background-color: var(--retro-black);
+            color: var(--retro-white);
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-image: 
+                linear-gradient(rgba(18, 18, 18, 0.9), rgba(18, 18, 18, 0.9)),
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(50, 50, 50, 0.1),
+                    rgba(50, 50, 50, 0.1) 1px,
+                    rgba(18, 18, 18, 0.1) 1px,
+                    rgba(18, 18, 18, 0.1) 10px
+                );
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px 0;
+            border-bottom: 3px double var(--retro-yellow);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: var(--retro-yellow);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+        }
+        
+        .subtitle {
+            color: #aaa;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+        
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 25px;
+        }
+        
+        .control-panel {
+            background: linear-gradient(to bottom, var(--retro-dark), var(--retro-black));
+            border: 2px solid var(--retro-gray);
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .panel-group {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px dotted var(--retro-gray);
+        }
+        
+        .panel-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        h2 {
+            font-size: 1.4rem;
+            margin-bottom: 18px;
+            color: var(--retro-yellow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            padding-bottom: 8px;
+        }
+        
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: var(--retro-yellow);
+        }
+        
+        .control-item {
+            margin-bottom: 18px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ccc;
+            font-weight: bold;
+        }
+        
+        select, input[type="range"] {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 3px;
+            border: 1px solid var(--retro-gray);
+            background: var(--retro-black);
+            color: var(--retro-white);
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        select:focus, input[type="range"]:focus {
+            border-color: var(--retro-yellow);
+            box-shadow: 0 0 8px var(--retro-yellow);
+        }
+        
+        input[type="color"] {
+            width: 100%;
+            height: 42px;
+            border: 1px solid var(--retro-gray);
+            border-radius: 3px;
+            cursor: pointer;
+            background: var(--retro-black);
+        }
+        
+        input[type="color"]:hover {
+            border-color: var(--retro-yellow);
+        }
+        
+        .color-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        button {
+            display: block;
+            width: 100%;
+            padding: 14px 12px;
+            background: var(--retro-dark);
+            color: var(--retro-white);
+            border: 2px solid var(--retro-yellow-dim);
+            border-radius: 3px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 0 var(--retro-yellow-dim);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 204, 0, 0.2), transparent);
+            transition: all 0.5s;
+        }
+        
+        button:hover {
+            background: var(--retro-black);
+            color: var(--retro-yellow);
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--retro-yellow-dim);
+        }
+        
+        button:hover::before {
+            left: 100%;
+        }
+        
+        #imageUploadBtn {
+            background: var(--retro-black);
+            border: 2px solid var(--retro-gray);
+            box-shadow: 0 4px 0 var(--retro-gray);
+        }
+        
+        #imageUploadBtn:hover {
+            border-color: var(--retro-yellow);
+            box-shadow: 0 2px 0 var(--retro-yellow-dim);
+            color: var(--retro-yellow);
+        }
+        
+        #downloadBtn {
+            background: var(--retro-black);
+            color: var(--retro-yellow);
+            border: 2px solid var(--retro-yellow);
+            box-shadow: 0 4px 0 var(--retro-yellow-dim);
+        }
+        
+        #downloadBtn:hover {
+            background: var(--retro-dark);
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--retro-yellow-dim);
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .preview-area {
+            background: linear-gradient(to bottom, var(--retro-dark), var(--retro-black));
+            border: 2px solid var(--retro-gray);
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+        }
+        
+        .canvas-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            border: 2px solid var(--retro-gray);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+            min-width: 300px;
+            flex: 1;
+        }
+        
+        .canvas-header {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--retro-black);
+            color: var(--retro-yellow);
+            padding: 8px 12px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            border: 1px solid var(--retro-gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 1;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            background-color: #333;
+        }
+        
+        .status-bar {
+            margin-top: 25px;
+            padding: 15px;
+            background: var(--retro-black);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            text-align: center;
+            color: #aaa;
+            border: 1px solid var(--retro-gray);
+            font-family: monospace;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .status-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--retro-yellow);
+            animation: scanline 8s linear infinite;
+        }
+        
+        @keyframes scanline {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+        
+        .info-box {
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--retro-dark);
+            border-left: 3px solid var(--retro-yellow);
+            font-size: 0.9rem;
+            color: #aaa;
+            font-family: monospace;
+        }
+        
+        .retro-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(rgba(255, 204, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 204, 0, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.4;
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="retro-grid"></div>
+    
+    <header>
+        <h1>Dithermaster</h1>
+        <p class="subtitle">V.3.6.2</p>
+    </header>
+    
+    <div class="app-container">
+        <div class="control-panel">
+            <div class="retro-grid"></div>
+            <div class="panel-group">
+                <h2>Image Input</h2>
+                <button id="imageUploadBtn">Upload Image</button>
+                <input type="file" id="imageUpload" accept="image/*">
+                <div id="imageInfo" class="info-box" style="display:none; margin-top:15px">
+                    <div id="imageDimensions">RESOLUTION: 0×0 PIXELS</div>
+                </div>
+            </div>
+            
+            <div class="panel-group">
+                <h2>Processing Controls</h2>
+                <div class="control-item">
+                    <label for="pixelSize">Pixel Size: <span id="pixelSizeValue">8</span>px</label>
+                    <input type="range" id="pixelSize" min="1" max="30" value="8">
+                </div>
+                
+                <div class="control-item">
+                    <label for="contrast">Contrast: <span id="contrastValue">100</span>%</label>
+                    <input type="range" id="contrast" min="0" max="200" value="100">
+                </div>
+
+                <div class="control-item">
+                    <label for="ditherAlgorithm">Dither Algorithm</label>
+                    <select id="ditherAlgorithm">
+                        <option value="threshold">Threshold</option>
+                        <option value="floydSteinberg">Floyd-Steinberg</option>
+                        <option value="atkinson">Atkinson</option>
+                        <option value="bayer4">Bayer Matrix 4×4</option>
+                        <option value="bayer8">Bayer Matrix 8×8</option>
+                    </select>
+                </div>
+                
+                <div class="control-item">
+                    <label for="pixelShape">Pixel Shape</label>
+                    <select id="pixelShape">
+                        <option value="square">Square</option>
+                        <option value="circle">Circle</option>
+                        <option value="triangle">Triangle</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="panel-group">
+                <h2>Color Settings</h2>
+                <div class="color-group">
+                    <div class="control-item">
+                        <label for="pixelColor">Pixel Color</label>
+                        <input type="color" id="pixelColor" value="#ffffff">
+                    </div>
+                    
+                    <div class="control-item">
+                        <label for="backgroundColor">Background</label>
+                        <input type="color" id="backgroundColor" value="#000000">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel-group">
+                <button id="downloadBtn">Export High-Res PNG</button>
+                <div class="info-box">
+                    // Exports at original resolution
+                </div>
+            </div>
+        </div>
+        
+        <div class="preview-area">
+            <div class="retro-grid"></div>
+            <div class="canvas-container">
+                <div class="canvas-wrapper">
+                    <div class="canvas-header">Input Image</div>
+                    <canvas id="originalCanvas"></canvas>
+                </div>
+                
+                <div class="canvas-wrapper">
+                    <div class="canvas-header">Dithered Output</div>
+                    <canvas id="resultCanvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="status-bar" id="statusBar">
+                >_ SYSTEM READY | UPLOAD IMAGE TO BEGIN
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        let originalImage = null;
+        let processedData = null;
+        let highResProcessedData = null;
+        let pixelSize = 8;
+        let canvasWidth = 400;
+        let canvasHeight = 300;
+        let originalImageData = null;
+        
+        // DOM elements
+        const originalCanvas = document.getElementById('originalCanvas');
+        const resultCanvas = document.getElementById('resultCanvas');
+        const pixelSizeInput = document.getElementById('pixelSize');
+        const pixelSizeValue = document.getElementById('pixelSizeValue');
+        const ditherAlgorithm = document.getElementById('ditherAlgorithm');
+        const pixelShape = document.getElementById('pixelShape');
+        const pixelColorInput = document.getElementById('pixelColor');
+        const backgroundColorInput = document.getElementById('backgroundColor');
+        const imageUploadBtn = document.getElementById('imageUploadBtn');
+        const imageUpload = document.getElementById('imageUpload');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const statusBar = document.getElementById('statusBar');
+        const imageInfo = document.getElementById('imageInfo');
+        const imageDimensions = document.getElementById('imageDimensions');
+        
+        // Set initial canvas sizes
+        originalCanvas.width = canvasWidth;
+        originalCanvas.height = canvasHeight;
+        resultCanvas.width = canvasWidth;
+        resultCanvas.height = canvasHeight;
+        
+        // Event listeners
+        pixelSizeInput.addEventListener('input', updatePixelSize);
+        ditherAlgorithm.addEventListener('change', () => { if(originalImage) processImage(); });
+        pixelShape.addEventListener('change', renderDithering);
+        pixelColorInput.addEventListener('input', renderDithering);
+        backgroundColorInput.addEventListener('input', renderDithering);
+        downloadBtn.addEventListener('click', downloadAsPNG);
+        imageUploadBtn.addEventListener('click', () => imageUpload.click());
+        imageUpload.addEventListener('change', handleImageUpload);
+        const contrastInput = document.getElementById('contrast');
+        const contrastValue = document.getElementById('contrastValue');
+        contrastInput.addEventListener('input', updateContrast);
+
+        
+        // Handle image upload
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !file.type.match('image.*')) return;
+            
+            statusBar.textContent = ">_ LOADING IMAGE DATA...";
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalImage = new Image();
+                originalImage.onload = function() {
+                    // Store original image dimensions
+                    const width = originalImage.width;
+                    const height = originalImage.height;
+                    
+                    // Update image info
+                    imageInfo.style.display = 'block';
+                    imageDimensions.textContent = `RESOLUTION: ${width}×${height} PX`;
+                    
+                    // Calculate dimensions to fit in preview canvas
+                    const maxWidth = canvasWidth;
+                    const maxHeight = canvasHeight;
+                    let previewWidth = width;
+                    let previewHeight = height;
+                    
+                    if (previewWidth > maxWidth) {
+                        previewHeight *= maxWidth / previewWidth;
+                        previewWidth = maxWidth;
+                    }
+                    
+                    if (previewHeight > maxHeight) {
+                        previewWidth *= maxHeight / previewHeight;
+                        previewHeight = maxHeight;
+                    }
+                    
+                    // Update canvas sizes
+                    originalCanvas.width = previewWidth;
+                    originalCanvas.height = previewHeight;
+                    resultCanvas.width = previewWidth;
+                    resultCanvas.height = previewHeight;
+                    
+                    // Draw original image on preview canvas
+                    const ctx = originalCanvas.getContext('2d');
+                    ctx.drawImage(originalImage, 0, 0, previewWidth, previewHeight);
+                    
+                    // Store original image data for high-res processing
+                    const originalDataCanvas = document.createElement('canvas');
+                    originalDataCanvas.width = width;
+                    originalDataCanvas.height = height;
+                    const originalCtx = originalDataCanvas.getContext('2d');
+                    originalCtx.drawImage(originalImage, 0, 0);
+                    originalImageData = originalCtx.getImageData(0, 0, width, height);
+                    
+                    statusBar.textContent = ">_ PROCESSING IMAGE...";
+                    
+                    // Process image after a short delay to allow rendering
+                    setTimeout(() => {
+                        processImage();
+                        statusBar.textContent = ">_ PROCESSING COMPLETE | ADJUST PARAMETERS";
+                    }, 100);
+                };
+                originalImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Update pixel size display
+        function updatePixelSize() {
+            pixelSize = parseInt(pixelSizeInput.value);
+            pixelSizeValue.textContent = pixelSize;
+            if(originalImage) processImage();
+        }
+        function updateContrast() {
+            contrastValue.textContent = contrastInput.value;
+            if (originalImage) processImage();
+        }
+
+        // Main image processing function
+        function processImage() {
+    if (!originalImageData) return;
+
+    // Get full-resolution data for dithering
+    const width = originalImage.width;
+    const height = originalImage.height;
+    const origData = originalImageData.data;
+
+    // Convert full-res image to grayscale
+    const grayscale = new Uint8ClampedArray(origData.length / 4);
+    for (let i = 0, j = 0; i < origData.length; i += 4, j++) {
+        const r = origData[i];
+        const g = origData[i + 1];
+        const b = origData[i + 2];
+     // Compute grayscale
+let gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+// Apply contrast adjustment
+const contrast = (contrastInput.value - 100) / 100; // -1 to +1
+gray = ((gray - 128) * (1 + contrast) + 128);
+
+grayscale[j] = Math.max(0, Math.min(255, gray));
+    }
+
+    // Apply dithering at full resolution
+    highResProcessedData = applyDitheringAlgorithm(
+        grayscale,
+        width,
+        height,
+        ditherAlgorithm.value
+    );
+
+    // Render the preview scaled to fit the preview canvas
+    renderPreview();
+}
+function renderPreview() {
+    const ctx = resultCanvas.getContext('2d');
+    const previewW = resultCanvas.width;
+    const previewH = resultCanvas.height;
+
+    // Create an offscreen canvas for full-res rendering
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = originalImage.width;
+    offCanvas.height = originalImage.height;
+    const offCtx = offCanvas.getContext('2d');
+
+    // Fill background
+    offCtx.fillStyle = backgroundColorInput.value;
+    offCtx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+
+    // Draw pixels according to highResProcessedData
+    offCtx.fillStyle = pixelColorInput.value;
+    const shape = pixelShape.value;
+    const w = offCanvas.width;
+    const h = offCanvas.height;
+
+    for (let y = 0; y < h; y += pixelSize) {
+        for (let x = 0; x < w; x += pixelSize) {
+            const idx = Math.floor(y) * w + Math.floor(x);
+            if (idx >= highResProcessedData.length || highResProcessedData[idx] === 0) continue;
+
+            switch (shape) {
+                case 'square':
+                    offCtx.fillRect(x, y, pixelSize, pixelSize);
+                    break;
+                case 'circle':
+                    offCtx.beginPath();
+                    offCtx.arc(x + pixelSize / 2, y + pixelSize / 2, pixelSize / 2, 0, Math.PI * 2);
+                    offCtx.fill();
+                    break;
+                case 'triangle':
+                    offCtx.beginPath();
+                    offCtx.moveTo(x + pixelSize / 2, y);
+                    offCtx.lineTo(x, y + pixelSize);
+                    offCtx.lineTo(x + pixelSize, y + pixelSize);
+                    offCtx.closePath();
+                    offCtx.fill();
+                    break;
+            }
+        }
+    }
+
+    // Clear preview canvas and draw scaled image
+    ctx.clearRect(0, 0, previewW, previewH);
+    ctx.drawImage(offCanvas, 0, 0, previewW, previewH);
+}
+
+            
+        
+        // Dithering algorithms
+        function applyDitheringAlgorithm(data, width, height, algorithm) {
+            const ditheredData = new Uint8ClampedArray(data.length);
+            
+            switch(algorithm) {
+                case 'threshold':
+                    // Simple threshold dithering
+                    for (let i = 0; i < data.length; i++) {
+                        ditheredData[i] = data[i] < 128 ? 0 : 255;
+                    }
+                    break;
+                    
+                case 'floydSteinberg':
+                    // Floyd-Steinberg error diffusion
+                    const errorBuffer = new Float64Array(data.length);
+                    
+                    for (let i = 0; i < data.length; i++) {
+                        const correctedValue = Math.min(255, Math.max(0, data[i] + errorBuffer[i]));
+                        const newValue = correctedValue < 128 ? 0 : 255;
+                        ditheredData[i] = newValue;
+                        
+                        const error = correctedValue - newValue;
+                        const x = i % width;
+                        const y = Math.floor(i / width);
+                        
+                        if (x < width - 1) errorBuffer[i + 1] += error * 7/16;
+                        if (x > 0 && y < height - 1) errorBuffer[i + width - 1] += error * 3/16;
+                        if (y < height - 1) errorBuffer[i + width] += error * 5/16;
+                        if (x < width - 1 && y < height - 1) errorBuffer[i + width + 1] += error * 1/16;
+                    }
+                    break;
+                    
+                case 'atkinson':
+                    // Atkinson dithering
+                    const atkinErrorBuffer = new Float64Array(data.length);
+                    
+                    for (let i = 0; i < data.length; i++) {
+                        const correctedValue = Math.min(255, Math.max(0, data[i] + atkinErrorBuffer[i]));
+                        const newValue = correctedValue < 128 ? 0 : 255;
+                        ditheredData[i] = newValue;
+                        
+                        const error = correctedValue - newValue;
+                        const errorPart = error / 8;
+                        const x = i % width;
+                        const y = Math.floor(i / width);
+                        
+                        if (x < width - 1) atkinErrorBuffer[i + 1] += errorPart;
+                        if (x < width - 2) atkinErrorBuffer[i + 2] += errorPart;
+                        if (y < height - 1) atkinErrorBuffer[i + width] += errorPart;
+                        if (y < height - 1 && x > 0) atkinErrorBuffer[i + width - 1] += errorPart;
+                        if (y < height - 2) atkinErrorBuffer[i + 2 * width] += errorPart;
+                    }
+                    break;
+                    
+                case 'bayer4':
+                case 'bayer8':
+                    // Bayer ordered dithering
+                    const bayerSize = algorithm === 'bayer4' ? 4 : 8;
+                    
+                    // Bayer matrices for thresholding
+                    const bayerMatrix = bayerSize === 4 ? 
+                        [
+                            [0, 8, 2, 10],
+                            [12, 4, 14, 6],
+                            [3, 11, 1, 9],
+                            [15, 7, 13, 5]
+                        ] : 
+                        [
+                            [0, 32, 8, 40, 2, 34, 10, 42],
+                            [48, 16, 56, 24, 50, 18, 58, 26],
+                            [12, 44, 4, 36, 14, 46, 6, 38],
+                            [60, 28, 52, 20, 62, 30, 54, 22],
+                            [3, 35, 11, 43, 1, 33, 9, 41],
+                            [51, 19, 59, 27, 49, 17, 57, 25],
+                            [15, 47, 7, 39, 13, 45, 5, 37],
+                            [63, 31, 55, 23, 61, 29, 53, 21]
+                        ];
+                    
+                    const thresholdMatrix = (x, y) => 
+                        bayerMatrix[y % bayerSize][x % bayerSize] * 255 / (bayerSize * bayerSize);
+                    
+                    for (let i = 0; i < data.length; i++) {
+                        const x = i % width;
+                        const y = Math.floor(i / width);
+                        ditheredData[i] = data[i] < thresholdMatrix(x, y) ? 0 : 255;
+                    }
+                    break;
+            }
+            
+            return ditheredData;
+        }
+        
+        // Render the dithered image
+        function renderDithering() {
+            if (!processedData) return;
+            
+            const ctx = resultCanvas.getContext('2d');
+            const width = resultCanvas.width;
+            const height = resultCanvas.height;
+            
+            // Clear canvas with background color
+            ctx.fillStyle = backgroundColorInput.value;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Set the pixel color
+            ctx.fillStyle = pixelColorInput.value;
+            
+            const shape = pixelShape.value;
+            
+            // Draw each pixel
+            for (let y = 0; y < height; y += pixelSize) {
+                for (let x = 0; x < width; x += pixelSize) {
+                    const idx = Math.floor(y) * width + Math.floor(x);
+                    if (idx >= processedData.length || processedData[idx] === 0) continue;
+                    
+                    switch (shape) {
+                        case 'square':
+                            ctx.fillRect(x, y, pixelSize, pixelSize);
+                            break;
+                        case 'circle':
+                            ctx.beginPath();
+                            ctx.arc(x + pixelSize/2, y + pixelSize/2, pixelSize/2, 0, Math.PI*2);
+                            ctx.fill();
+                            break;
+                        case 'triangle':
+                            ctx.beginPath();
+                            ctx.moveTo(x + pixelSize/2, y);
+                            ctx.lineTo(x, y + pixelSize);
+                            ctx.lineTo(x + pixelSize, y + pixelSize);
+                            ctx.closePath();
+                            ctx.fill();
+                            break;
+                    }
+                }
+            }
+        }
+        
+        // Download as PNG at original resolution
+        function downloadAsPNG() {
+            if (!originalImage) {
+                statusBar.textContent = ">_ ERROR: NO IMAGE DATA | PLEASE UPLOAD IMAGE";
+                return;
+            }
+            
+            statusBar.textContent = ">_ EXPORTING HIGH-RES IMAGE...";
+            
+            // Create a canvas at original resolution
+            const exportCanvas = document.createElement('canvas');
+            const exportCtx = exportCanvas.getContext('2d');
+            
+            exportCanvas.width = originalImage.width;
+            exportCanvas.height = originalImage.height;
+            
+            // Apply background color
+            exportCtx.fillStyle = backgroundColorInput.value;
+            exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+            
+            // Apply dithering to the full-resolution canvas
+            exportCtx.fillStyle = pixelColorInput.value;
+            
+            for (let y = 0; y < exportCanvas.height; y += pixelSize) {
+                for (let x = 0; x < exportCanvas.width; x += pixelSize) {
+                    const idx = Math.floor(y) * exportCanvas.width + Math.floor(x);
+                    if (idx >= highResProcessedData.length || highResProcessedData[idx] === 0) continue;
+                    
+                    switch (pixelShape.value) {
+                        case 'square':
+                            exportCtx.fillRect(x, y, pixelSize, pixelSize);
+                            break;
+                        case 'circle':
+                            exportCtx.beginPath();
+                            exportCtx.arc(x + pixelSize/2, y + pixelSize/2, pixelSize/2, 0, Math.PI*2);
+                            exportCtx.fill();
+                            break;
+                        case 'triangle':
+                            exportCtx.beginPath();
+                            exportCtx.moveTo(x + pixelSize/2, y);
+                            exportCtx.lineTo(x, y + pixelSize);
+                            exportCtx.lineTo(x + pixelSize, y + pixelSize);
+                            exportCtx.closePath();
+                            exportCtx.fill();
+                            break;
+                    }
+                }
+            }
+            
+            // Create download link
+            setTimeout(() => {
+                const dataURL = exportCanvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = `dithered-${originalImage.width}x${originalImage.height}.png`;
+                link.href = dataURL;
+                link.click();
+                
+                statusBar.textContent = ">_ EXPORT COMPLETE | IMAGE SAVED";
+            }, 500);
+        }
+        
+        // Initialize with a demo image
+        window.onload = function() {
+            // Create and load a demo image
+            originalImage = new Image();
+            originalImage.onload = function() {
+                // Set demo image dimensions
+                const width = 200;
+                const height = 200;
+                
+                // Update image info
+                imageInfo.style.display = 'block';
+                imageDimensions.textContent = `RESOLUTION: ${width}×${height} PX`;
+                
+                originalCanvas.width = width;
+                originalCanvas.height = height;
+                resultCanvas.width = width;
+                resultCanvas.height = height;
+                
+                const ctx = originalCanvas.getContext('2d');
+                ctx.drawImage(originalImage, 0, 0, width, height);
+                
+                // Store original image data for high-res processing
+                const originalDataCanvas = document.createElement('canvas');
+                originalDataCanvas.width = width;
+                originalDataCanvas.height = height;
+                const originalCtx = originalDataCanvas.getContext('2d');
+                originalCtx.drawImage(originalImage, 0, 0);
+                originalImageData = originalCtx.getImageData(0, 0, width, height);
+                
+                statusBar.textContent = ">_ PROCESSING DEMO IMAGE...";
+                
+                setTimeout(() => {
+                    processImage();
+                    statusBar.textContent = ">_ SYSTEM READY | UPLOAD YOUR IMAGE";
+                }, 500);
+            };
+            originalImage.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='80' fill='%2342a5f5'/%3E%3Ccircle cx='80' cy='80' r='15' fill='white'/%3E%3Ccircle cx='120' cy='80' r='15' fill='white'/%3E%3Ccircle cx='80' cy='80' r='5' fill='black'/%3E%3Ccircle cx='120' cy='80' r='5' fill='black'/%3E%3Cpath d='M70 140 Q100 170 130 140' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E";
+        };
+    </script>
+</body>
+</html>

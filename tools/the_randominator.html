@@ -1,0 +1,1825 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Creative Prompt Generator</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap"
+            rel="stylesheet"
+        />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Space Mono", monospace;
+                background-color: #111;
+                background-image: radial-gradient(#333 1px, transparent 1px);
+                background-size: 20px 20px;
+                color: #333;
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
+            }
+
+            .menu-bar {
+                width: 100%;
+                max-width: 1200px;
+                height: 30px;
+                background-color: white;
+                border: 2px solid black;
+                border-bottom: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 10px;
+                font-size: 14px;
+                font-weight: 400;
+                user-select: none;
+                z-index: 100;
+                margin: 0 auto;
+            }
+
+            .menu-left {
+                display: flex;
+                gap: 15px;
+            }
+
+            .menu-item {
+                padding: 3px 8px;
+                cursor: pointer;
+                border-radius: 0;
+            }
+
+            .menu-item:hover {
+                background-color: #808000;
+                color: white;
+            }
+
+            .close-btn {
+                width: 20px;
+                height: 20px;
+                background-color: white;
+                border: 2px solid black;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                font-size: 12px;
+                color: black;
+                font-weight: bold;
+                transition: all 0.3s ease;
+            }
+
+            .close-btn:hover {
+                background-color: #808000;
+                color: white;
+            }
+
+            .popup-window {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 90%;
+                max-width: 550px;
+                background: white;
+                border: 2px solid black;
+                z-index: 1000;
+                display: none;
+            }
+
+            .popup-header {
+                background: white;
+                padding: 8px 12px;
+                border-bottom: 1px solid black;
+                cursor: move;
+                user-select: none;
+                font-weight: 400;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .popup-close {
+                cursor: pointer;
+                font-weight: bold;
+            }
+
+            .popup-content {
+                padding: 15px;
+                font-size: 14px;
+                line-height: 1.5;
+                max-height: 70vh;
+                overflow-y: auto;
+            }
+
+            .popup-content h3 {
+                margin: 15px 0 5px 0;
+                font-size: 16px;
+                font-weight: 400;
+            }
+
+            .popup-content p {
+                margin-bottom: 10px;
+            }
+
+            .popup-content ul {
+                padding-left: 20px;
+                margin-bottom: 10px;
+            }
+
+            .popup-content li {
+                margin-bottom: 5px;
+            }
+
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.3);
+                z-index: 999;
+                display: none;
+            }
+
+            .container-wrapper {
+                width: 90%;
+                max-width: 1200px;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }
+
+            .container {
+                flex: 1;
+                background-color: white;
+                border: 2px solid black;
+                display: grid;
+                grid-template-columns: 380px 1fr;
+                overflow: hidden;
+            }
+
+            .left-panel {
+                padding: 25px;
+                border-right: 2px solid black;
+                display: flex;
+                flex-direction: column;
+                gap: 25px;
+                overflow-y: auto;
+            }
+
+            .title {
+                font-family: "Space Mono", monospace;
+                font-weight: 400;
+                font-size: 1.8rem;
+                color: black;
+                text-align: center;
+                margin-bottom: 10px;
+                text-transform: lowercase;
+            }
+
+            .toggle-box {
+                background-color: white;
+                border: 2px solid black;
+                padding: 15px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .toggle-box input {
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+            }
+
+            .toggle-box input:checked {
+                accent-color: #808000;
+            }
+
+            .toggle-box label {
+                font-weight: 400;
+                cursor: pointer;
+                user-select: none;
+                flex: 1;
+                text-transform: lowercase;
+            }
+
+            .lock-btn {
+                width: 30px;
+                height: 30px;
+                background: white;
+                border: 2px solid black;
+                cursor: pointer;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-size: 18px;
+                transition: all 0.3s ease;
+                color: black;
+            }
+
+            .lock-btn:hover:not(.locked) {
+                background-color: #808000;
+                color: white;
+            }
+
+            .lock-btn.locked {
+                background-color: #808000;
+                color: white;
+            }
+
+            .slider-container {
+                margin-top: 10px;
+                padding: 0 15px;
+            }
+
+            .slider-container label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 400;
+                text-transform: lowercase;
+            }
+
+            .slider-wrapper {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .slider-wrapper input {
+                flex: 1;
+            }
+
+            .slider-value {
+                font-weight: 400;
+                min-width: 20px;
+                text-align: center;
+            }
+
+            .buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+                margin-top: auto;
+            }
+
+            .btn {
+                background-color: white;
+                color: black;
+                font-family: "Space Mono", monospace;
+                font-weight: 400;
+                font-size: 1rem;
+                border: 2px solid black;
+                padding: 15px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-align: center;
+                text-transform: lowercase;
+            }
+
+            .btn:hover {
+                background-color: #808000;
+                color: white;
+            }
+
+            .btn-download {
+                position: relative;
+            }
+
+            .loading {
+                display: none;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.7);
+                justify-content: center;
+                align-items: center;
+            }
+
+            .spinner {
+                width: 30px;
+                height: 30px;
+                border: 3px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                border-top-color: white;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .right-panel {
+                padding: 30px;
+                display: flex;
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .prompt-display {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                padding: 20px;
+                border: 2px solid black;
+                margin-bottom: 30px;
+                min-height: 300px;
+            }
+
+            .prompt-line {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 10px 0;
+                width: 100%;
+            }
+
+            .prompt-text {
+                font-size: 1.3rem;
+                flex: 1;
+                text-transform: lowercase;
+            }
+
+            .colors-container {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-top: 20px;
+            }
+
+            .color-swatch {
+                width: 50px;
+                height: 50px;
+                border: 2px solid black;
+                position: relative;
+                cursor: pointer;
+            }
+
+            .tooltip {
+                position: fixed;
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                padding: 10px;
+                font-size: 0.9rem;
+                z-index: 1000;
+                pointer-events: none;
+                transform: translate(-50%, -100%);
+                margin-top: -10px;
+                min-width: 150px;
+                text-align: center;
+                font-family: "Space Mono", monospace;
+            }
+
+            .tooltip div {
+                margin: 3px 0;
+            }
+
+            .notification {
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 15px 25px;
+                z-index: 2000;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+                font-family: "Space Mono", monospace;
+            }
+
+            .notification.show {
+                opacity: 1;
+            }
+
+            @media (max-width: 900px) {
+                .container {
+                    grid-template-columns: 1fr;
+                    grid-template-rows: auto 1fr;
+                    height: auto;
+                    min-height: 90vh;
+                }
+
+                .left-panel {
+                    border-right: none;
+                    border-bottom: 2px solid black;
+                }
+
+                .menu-bar {
+                    border-radius: 0;
+                }
+
+                .container {
+                    border-radius: 0;
+                }
+
+                .popup-window {
+                    width: 95%;
+                    max-width: 95%;
+                }
+
+                .popup-content {
+                    max-height: 60vh;
+                }
+            }
+
+            @media (max-width: 1200px) {
+                .popup-window {
+                    width: 60%;
+                    max-width: 60%;
+                }
+
+                .popup-content {
+                    padding: 12px;
+                    font-size: 13px;
+                }
+
+                .popup-content h3 {
+                    font-size: 14px;
+                }
+
+                .prompt-text {
+                    font-size: 1.1rem;
+                }
+            }
+
+            input[type="range"] {
+                -webkit-appearance: none;
+                width: 100%;
+                height: 1px;
+                background: #fff;
+                border: 1px solid black;
+                border-radius: 0;
+                outline: none;
+            }
+
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 20px;
+                height: 20px;
+                background: white;
+                border: 2px solid black;
+                border-radius: 0;
+                cursor: pointer;
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                background: white;
+                border: 2px solid black;
+                border-radius: 0;
+                cursor: pointer;
+            }
+
+            input[type="range"]::-webkit-slider-thumb:focus {
+                outline: none;
+            }
+            input[type="range"]::-moz-range-thumb:focus {
+                outline: none;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="container-wrapper">
+            <div class="menu-bar">
+                <div class="menu-left">
+                    <div class="menu-item" id="info-btn">how to</div>
+                    <div class="menu-item" id="about-btn">about</div>
+                </div>
+                <div class="close-btn" id="close-btn">×</div>
+            </div>
+
+            <div class="container">
+                <div class="left-panel">
+                    <h1 class="title">what to do...</h1>
+
+                    <div class="toggle-box">
+                        <input type="checkbox" id="aesthetics-toggle" checked />
+                        <label for="aesthetics-toggle">style</label>
+                        <div class="lock-btn" data-category="aesthetics">
+                            ♥
+                        </div>
+                    </div>
+
+                    <div class="toggle-box">
+                        <input type="checkbox" id="medium-toggle" checked />
+                        <label for="medium-toggle">format</label>
+                        <div class="lock-btn" data-category="medium">♥</div>
+                    </div>
+
+                    <div class="toggle-box">
+                        <input type="checkbox" id="motif-toggle" checked />
+                        <label for="motif-toggle">theme</label>
+                        <div class="lock-btn" data-category="motif">♥</div>
+                    </div>
+
+                    <div class="toggle-box">
+                        <input type="checkbox" id="color-toggle" checked />
+                        <label for="color-toggle">color</label>
+                        <div class="lock-btn" data-category="color">♥</div>
+                    </div>
+
+                    <div class="slider-container" id="color-amount-container">
+                        <label for="color-amount">color amount</label>
+                        <div class="slider-wrapper">
+                            <input
+                                type="range"
+                                id="color-amount"
+                                min="1"
+                                max="6"
+                                value="3"
+                            />
+                            <span class="slider-value" id="color-amount-value"
+                                >3</span
+                            >
+                        </div>
+                    </div>
+
+                    <div class="buttons">
+                        <button id="generate-btn" class="btn">
+                            gimme somethin
+                        </button>
+                        <button id="download-btn" class="btn btn-download">
+                            download as jpg
+                            <div class="loading">
+                                <div class="spinner"></div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div class="prompt-display">
+                        <div class="prompt-line">
+                            <div class="prompt-text" id="header-text">
+                                how about a...
+                            </div>
+                        </div>
+
+                        <div class="prompt-line">
+                            <div class="prompt-text" id="aesthetics-text">
+                                vaporwave
+                            </div>
+                        </div>
+
+                        <div class="prompt-line">
+                            <div class="prompt-text" id="medium-text">
+                                poster
+                            </div>
+                        </div>
+
+                        <div class="prompt-line">
+                            <div class="prompt-text" id="inspired-by-text">
+                                featuring or inspired by
+                            </div>
+                        </div>
+
+                        <div class="prompt-line">
+                            <div class="prompt-text" id="motif-text">
+                                strawberries
+                            </div>
+                        </div>
+
+                        <div class="prompt-line">
+                            <div class="prompt-text" id="color-text">
+                                using the 3 colors below
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="colors-container" id="colors-container">
+                        <div
+                            class="color-swatch"
+                            style="background-color: #ff7bac"
+                            data-hex="#ff7bac"
+                        ></div>
+                        <div
+                            class="color-swatch"
+                            style="background-color: #00ffff"
+                            data-hex="#00ffff"
+                        ></div>
+                        <div
+                            class="color-swatch"
+                            style="background-color: #6200ff"
+                            data-hex="#6200ff"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="overlay" id="overlay"></div>
+
+        <div class="popup-window" id="info-popup">
+            <div class="popup-header">
+                <span>how to</span>
+                <span class="popup-close" id="info-close">×</span>
+            </div>
+            <div class="popup-content">
+                Want to do something creative but are stuck on "What do I
+                do?" Just check all the boxes you want as input and click
+                "Gimme something". See something you like that doesn't fit
+                with the rest? Lock it and continue. But beware: There's no
+                going back, so take your time to read the prompts, or just
+                spam it and let randomness decide. If you like a color that
+                appears, hover over it to see all the details or click to
+                copy the hex code. Want to save something for later? Just
+                download it. :)
+            </p>
+
+            <h3><strong>Some Possibly Helpful Tips</strong></h3>
+
+            <p>
+                For the style category, you can find plenty of visual
+                inspiration on a certain app/website that starts with P and
+                rhymes with Binterest. If a word appears that you don't
+                recognize, simply google it!
+            </p>
+
+            <p>
+                You can interpret prompts literally, but no one's stopping
+                you from thinking outside the box. For example, take
+                something simple like "a door." You could use the first door
+                that comes to mind, or you could brainstorm:
+            </p>
+
+            <ul>
+                <li>A door is wooden, but it can also be made of glass.</li>
+                <li>
+                    There are push doors, pull doors, rotating doors, and
+                    sliding doors.
+                </li>
+                <li>Doors need hinges and a doorknob.</li>
+                <li>
+                    "Eyes are the door to the soul," and an open door can
+                    symbolize a new opportunity.
+                </li>
+                <li>
+                    There are doors for specific uses: fire doors, pet
+                    doors, ...
+                </li>
+            </ul>
+
+            <p>And so on and so forth.</p>
+
+            <p>
+                I wish you fun! If you get inspired, create something, and
+                decide to post it online, please tag me @wiolivia or use
+                #the_randominator
+            </p>
+
+            <p>I'd love to see what you create. :)</p>
+            </div>
+        </div>
+
+        <div class="popup-window" id="about-popup">
+            <div class="popup-header">
+                <span>about</span>
+                <span class="popup-close" id="about-close">×</span>
+            </div>
+            <div class="popup-content">
+                <p>
+                    The idea for this design tool originated a while ago, as I
+                    wanted to prompt myself to do more creative things outside
+                    of university, or just in general rather than my usual
+                    doomscrolling. But I was still left with the question: "What
+                    do I do... ?" So, I downloaded a wheel-spin app and created
+                    the first version of my inspiration generator, which became
+                    the foundation for the tool you see now.
+                </p>
+
+                <p>
+                    I added even more words to each category and included a
+                    color generator, giving myself – and anyone in need of a
+                    little inspiration – a great starting point for some
+                    creativity.
+                </p>
+
+                <p>
+                    Since this tool is based on a subjective brainstorm, some
+                    references may not be familiar to everyone, but they're
+                    definitely doable with a quick Google search. Important side
+                    note: This is purely based on words I thought would be
+                    interesting for projects, and I am in no way affiliated with
+                    any brands or products mentioned.
+                </p>
+
+                <p>
+                    If you get inspired, create something, and decide to post it
+                    online, please tag me @wiolivia or use #the_randominator
+                </p>
+
+                <p>I'd love to see what you create! :)</p>
+
+                <p><strong>Created / Vibe coded by Olivia Wilk</strong></p>
+            </div>
+        </div>
+
+        <div class="notification" id="notification">
+            hex code copied to clipboard!
+        </div>
+
+        <script>
+            // Data arrays
+            const mediums = [
+                "book cover",
+                "cd cover",
+                "poster",
+                "character",
+                "zine",
+                "postal stamp",
+                "collage",
+                "3d model",
+                "logo",
+                "linocut",
+                "calendar",
+                "phone wallpaper",
+                "sticker sheet",
+                "sticker",
+                "figurine",
+                "magazine cover",
+                "graphic tee design",
+                "tote bag design",
+                "postcard",
+                "font",
+                "keychain",
+                "deck of cards",
+                "magazine spread",
+                "pattern",
+                "concert/event ticket",
+                "letter writing set",
+                "mural",
+                "illustration",
+                "packaging",
+                "vinyl record sleeve",
+                "cassette tape cover",
+                "graphic novel page",
+                "bookmark",
+                "business card",
+                "coloring book page",
+                "app icon",
+                "icon",
+                "animated gif",
+                "screensaver",
+                "sticky note set",
+                "product label",
+                "framed print",
+                "tattoo flash",
+            ];
+
+            const motifs = [
+                "strawberries",
+                "sharks",
+                "an old-timer",
+                "a tomato",
+                "gravity falls",
+                "bingo",
+                "bubbles",
+                "water",
+                "sailor moon",
+                "animal crossing",
+                "a ladybug",
+                "a cyborg",
+                "a loft",
+                "[your name] core on pinterest",
+                "a safety pin",
+                "a paperclip",
+                "a frog",
+                "sardines",
+                "detective conan",
+                "film-noir",
+                "pads",
+                "a bass guitar",
+                "minecraft",
+                "hohes c plus magnesium & b-vitamin juice",
+                "a shell",
+                "a postcard",
+                "a knot",
+                "chess",
+                "a wizard",
+                "distractible",
+                "rivers",
+                "maps",
+                "doors",
+                "gear",
+                "y2k",
+                "polish movie seksmisja",
+                "polish movie nienawidze poniedzialku",
+                "inuyasha",
+                "a florist",
+                "iridescent",
+                "obsidian",
+                "a plastic chair",
+                "a metal pipe",
+                "a mosaic",
+                "traffic lights",
+                "wizardry",
+                "fog",
+                "a bicycle",
+                "a motherboard",
+                "a screwdriver",
+                "twigs",
+                "tunes",
+                "a rave",
+                "a wave",
+                "sparkle",
+                "shine",
+                "ethereal light",
+                "a biblically accurate angel",
+                "comic sans",
+                "mahjong",
+                "a bear",
+                "computer lesson headline fonts",
+                "totoro",
+                "laputa castle in the sky",
+                "a rainbow pencil",
+                "street markings",
+                "street signs",
+                "deleter screen tones and halftones",
+                "truck-kun",
+                "a lighter",
+                "an apple",
+                "a pear",
+                "a pear phone",
+                "moth man",
+                "ippilotta viktualia rollgardina pfefferminz efraimstochter langstrumpf",
+                "filigree",
+                "trinkets",
+                "a stained glass windows",
+                "a knitted pullover",
+                "curls",
+                "cords",
+                "an extension cable",
+                "headphones",
+                "a veil",
+                "a japanese tea bottle",
+                "baba yaga",
+                "aglets",
+                "shadows",
+                "piano keys",
+                "flags",
+                "a wild strawberry",
+                "chocolate tempering",
+                "sous-vide",
+                "vacuum sealing",
+                "a sunfish",
+                "dog poop baggies",
+                "a beanie",
+                "glasses",
+                "spirals",
+                "spooky lake month",
+                "a keyboard",
+                "a flip phone",
+                "undergarments",
+                "a trebuchet",
+                "human fall flat",
+                "r.e.p.o.",
+                "a pokémon you haven't heard of before",
+                "kirby drawn by the dev team",
+                "poison",
+                "network maps",
+                "a cutting mat",
+                "londons moquettes",
+                "a catering can",
+                "polish currency",
+                "japanese currency",
+                "train hopping",
+                "madras fabric",
+                "a dice set",
+                "circles",
+                "a hexaflexagon",
+                "foil balloons",
+                "a ruler",
+                "an andersen fairy tale",
+                "the abecadło z pieca spadło rhyme",
+                "a laundry basket",
+                "a clothespin",
+                "a digimon you haven't heard of before",
+                "spices",
+                "a grandmas recipe",
+                "the number 4",
+                "mojo jojo",
+                "a ben 10 alien",
+                "a stock image you only used once",
+                "one of your childhood drawings",
+                "a gluestick",
+                "the beef between lidl and biedronka",
+                "a roadtrip",
+                "an airplane window",
+                "crown shyness",
+                "gum stuck on sidewalks and streets",
+                "electric currency",
+                "the way lightning forms",
+                "your childhood room",
+                "your current room",
+                "a sunset lamp",
+                "a flip clock",
+                "train announcements",
+                "the ceiling",
+                "a hippo",
+                "a dessert",
+                "the last song you've listened to",
+                "a water bottle",
+                "your favorite glass or mug",
+                "a council approved spoon",
+                "lace",
+                "lace curtains",
+                "the frankenstein castle",
+                "your favorite vacation memory",
+                "a long car ride",
+                "fruit flies",
+                "a food you hate",
+                "the last movie you've seen",
+                "a komma",
+                "punctuation",
+                "a bunsen burner",
+                "a dogs paw",
+                "a kittens paw",
+                "a hoof",
+                "a squirrel skeleton",
+                "a painting in a museum you really like",
+                "the world ending",
+                "a znicz",
+                "the wii",
+                "the dsi xl",
+                "an uncooperative printer",
+                "dots",
+                "an impressionist",
+                "a radiator",
+                "a snoopy hair dryer",
+                "a garage",
+                "garbage",
+                "tire marks",
+                "a doggo stopping mid walk",
+                "prunella the poltergeist",
+                "a usb drive",
+                "a fork which would be the councils worst nightmare",
+                "a plushie",
+                "an uv-lamp",
+                "nintendogs",
+                "a mustache",
+                "a word you weren't convinced was really a word",
+                "a dictionary",
+                "fresh dumbledores büro soundtrack by coldmirror",
+                "cereal",
+                "greg",
+                "bernd the bread",
+                "bolek & lolek",
+                "nu pagadi",
+                "the wawel dragon",
+                "a mummy",
+                "indiana jones",
+                "the removal of headphone jacks on phones",
+                "a voltage tester",
+                "supplements",
+                "the escape button",
+                "konpeito",
+                "apothecary drawers",
+                "your current vocal stim",
+                "a clothes hanger",
+                "a petri dish",
+                "the giant set square they used in math lessons",
+                "cyanotype",
+                "a landline",
+                "a famous monument or building in your city",
+                "the wildest headline you've read",
+                "incandescent lights",
+                "a zipper",
+                "sewing needle",
+                "sewing thread",
+                "thrifting",
+                "not looking directly at the sun or you'll go blind",
+                "a sony walkman",
+                "a portable dvd player",
+                "the exclamation hurra!",
+                "gradients",
+                "70s fashion",
+                "90s fashion",
+                "your current battery percentage",
+                "trams",
+                "public transportation",
+                "a fountain",
+                "a fountain pen",
+                "a made-up acronym",
+                "an mp4 player",
+                "an ipod",
+                "the concept of kurz durchlüften",
+                "the powerhouse of the cell",
+                "a hairstrand",
+                "words that have multiple meanings",
+                "the jugendwort des jahres",
+                "paint spilled on a carpet",
+                "slime ingredients",
+                "your comfort food",
+                "a razor blade",
+                "a shojo scenario",
+                "a shonen scenario",
+                "a plot twist",
+                "tiny pencils which have been sharpened as often as possible",
+                "blackout curtains",
+                "painters tape",
+                "a receipt",
+                "a globe",
+                "a music box",
+                "a vase",
+                "a bell",
+                "a watering can",
+                "a garden center",
+                "pepper spray",
+                "sign language",
+                "a shed",
+                "a daddy long legs",
+                "a bedtime story",
+                "a morally grey thing to do",
+                "piracy",
+                "vintage toy cars",
+                "a wooden spatula",
+                "pasta shapes",
+                "boiling water",
+                "aerated water",
+                "still water",
+                "uranium glass",
+                "nail glue",
+                "lash glue",
+                "a stain",
+                "moss",
+                "a top hat",
+                "a corset",
+                "an animal from a barbie movie",
+                "the backrooms",
+                "jelly",
+                "pinky fingers deformed by holding ones phone",
+                "an eraser that you stabbed multiple times with a pencil",
+                "miniatures",
+                "giant versions of normal objects",
+                "a clown car",
+                "a knock knock joke",
+                "the chair which holds all your clothes",
+                "an ominous figure in the dark which is actually just a pile of clothes",
+                "left open cabinets",
+                "steam",
+                "idefix",
+                "a handfish",
+                "seatbelts",
+                "your desk chair",
+                "woodgrain",
+                "a tapestry",
+                "a quilt",
+                "a mosaic",
+                "a snack you like",
+                "ribbons",
+                "wrapping paper",
+                "headscratches",
+                "hugs",
+                "a whistle",
+                "forget me nots",
+                "a sponge",
+                "a tamagochi",
+                "a lesser known sanrio character",
+                "a fairy ring",
+                "a fae trap",
+                "a leaf skeleton",
+                "a moonbow",
+                "frost on windows",
+                "a single sock",
+                "a wet paint sign",
+                "pigeons",
+                "a guinea pig",
+                "a mole",
+                "a sigh",
+                "vocal strings",
+                "breath",
+                "a clothing item",
+                "something supercalifragilisticexpialidocious",
+                "wumbology",
+                "scissors",
+                "an eraser",
+                "a gear",
+                "tie dye",
+                "a board game",
+                "serifs",
+                "the mothership",
+                "a cow being abducted",
+                "walnuts",
+                "seed beads",
+                "nail clippers",
+                "a brick",
+                "an instruction manual",
+                "a ladder",
+                "superstitious beliefs",
+                "found footage",
+                "a magic 8 ball",
+                "a basket",
+                "a poisonous mushroom",
+                "a poisonous frog",
+                "a coral reef",
+                "deep diving",
+                "a deep sea creature",
+                "a dinosaur",
+                "alcohol poisoning",
+                "a funny review",
+                "a little guy",
+                "thumbelina",
+                "a hard drive",
+                "a floppy disk",
+                "a spa day",
+                "the duke of the north",
+                "the emotions for your least favorite color",
+                "an envelope",
+                "a wax seal",
+                "felt",
+                "stop motion",
+                "a circus tent",
+                "an onomatopoeia",
+                "teeth",
+                "eyeballs",
+                "the spacebar",
+                "a döner",
+                "zaczarowany ołówek",
+                "a chimney",
+                "hundertwasser",
+                "a streetlight in fog",
+                "snow falling",
+                "a snowflake",
+                "a fingerprint",
+                "powerlines",
+                "a laser pointer",
+                "a snail",
+                "animal print",
+                "a ski resort",
+                "a tropical resort",
+                "a lagoon",
+                "a fata morgana",
+                "an alley of trees",
+                "a weeping willow",
+                "the oldest tree",
+                "train tracks",
+                "the static on a crt tv",
+                "a hallmark movie plot",
+                "bearings",
+                "a fistfight",
+                "a bruise",
+                "a swing",
+                "a hike",
+                "a page in a book",
+                "the first sentence of a book",
+                "a cd",
+                "a demolition",
+                "a dust bunny",
+                "porcelain",
+                "sea glass",
+                "chernobyl",
+                "wrinkles",
+                "an iconic old lady",
+                "a lighthouse",
+                "a lighthouse keeper",
+                "a drawbridge",
+                "the peak of a mountain",
+                "a view",
+                "a pearl",
+                "a cardboard cutout",
+                "a magic spell",
+                "a line from shakespeare's literature",
+                "something in your kitchen",
+                "something in your bathroom",
+                "an everything drawer",
+                "something that was frankensteined together",
+                "stairs",
+                "a blueprint",
+                "bluetooth",
+                "a body part",
+                "a book you haven't read but want to someday",
+                "a pile of clothes",
+                "a current",
+                "a colorful bird",
+                "a random city",
+                "a sudoku",
+                "a crossword puzzle clue",
+                "a hair clip",
+                "inscryption",
+                "a swamp",
+                "morse code",
+                "a hospital gown",
+                "vomit",
+                "an aquarium",
+                "the zoo",
+                "silly vampires",
+                "eyelashes",
+                "baby bangs",
+                "a chain",
+                "a pillow fort",
+                "a moiré pattern",
+                "a sneeze",
+                "tampons",
+                "ponyo",
+                "the 1987 bronx police seals",
+                "an inator",
+            ];
+
+            const aesthetics = [
+                "bauhaus",
+                "art nouveau",
+                "cybercore",
+                "art deco",
+                "frutiger aero",
+                "flat",
+                "postmodern",
+                "japandi",
+                "grunge",
+                "y2k",
+                "heisei retro",
+                "kidcore",
+                "malwarecore",
+                "urbing",
+                "whimsygoth",
+                "twee",
+                "minimalist",
+                "brutalist",
+                "swiss",
+                "anti-design",
+                "futuristic",
+                "coquette",
+                "retro futuristic",
+                "neo frutiger aero",
+                "dark academia",
+                "light academia",
+                "nautical tattoo",
+                "pixel art",
+                "memphis",
+                "shabby chic",
+                "victorian",
+                "vaporwave",
+                "mid century",
+                "soviet",
+                "polish movie poster",
+                "isocore",
+                "kidcore",
+                "malwarecore",
+                "urbling",
+                "vorticist",
+                "whimsygoth",
+                "twee",
+                "minimalist",
+                "brutalist",
+                "swiss",
+                "frasurbane",
+                "anti-design",
+                "futuristic",
+                "coquette",
+                "retro futuristic",
+                "neo-frutiger aero",
+                "dark academia",
+                "light academia",
+                "nautical tattoo",
+                "rebus",
+                "trinkety",
+                "receiptify-y",
+                "narrative neo-brutalistic",
+                "modern nostalgia",
+                "swiss punk",
+                "neoclassical",
+                "baroque",
+                "aura-y",
+                "ethereal",
+                "anthropomorphic",
+                "pixel art-y",
+                "memphis",
+                "shabby chic",
+                "farmhouse",
+                "victorian",
+                "mystical western",
+                "kitsch",
+                "grid-y",
+                "synthwavey",
+                "vaporwavey",
+                "pop art",
+                "bento box",
+                "tenebrous",
+                "pointillistic",
+                "surrealistic",
+                "utilitarian",
+                "mid century",
+                "nordic",
+                "soviet",
+                "prl",
+                "polish movie poster-y",
+                "b-movie poster art-y",
+                "horror",
+                "low-poly",
+                "indie sleaze",
+                "vintage sci-fi",
+                "goblin core",
+                "dark morpheus",
+                "liminal space-y",
+                "paper craft-y",
+                "ultra-minimalist",
+                "maximalist clutter-y",
+                "high contrast",
+                "mystical",
+                "vintage",
+                "retro",
+            ];
+
+            // DOM Elements
+            const generateBtn = document.getElementById("generate-btn");
+            const downloadBtn = document.getElementById("download-btn");
+            const colorAmountSlider = document.getElementById("color-amount");
+            const colorAmountValue =
+                document.getElementById("color-amount-value");
+            const colorAmountContainer = document.getElementById(
+                "color-amount-container",
+            );
+            const colorToggle = document.getElementById("color-toggle");
+            const mediumToggle = document.getElementById("medium-toggle");
+            const motifToggle = document.getElementById("motif-toggle");
+            const aestheticsToggle =
+                document.getElementById("aesthetics-toggle");
+            const lockButtons = document.querySelectorAll(".lock-btn");
+            const loading = document.querySelector(".loading");
+            const notification = document.getElementById("notification");
+            const headerText = document.getElementById("header-text");
+            const inspiredByText = document.getElementById("inspired-by-text");
+            const motifText = document.getElementById("motif-text");
+
+            // Menu elements
+            const infoBtn = document.getElementById("info-btn");
+            const aboutBtn = document.getElementById("about-btn");
+            const closeBtn = document.getElementById("close-btn");
+            const overlay = document.getElementById("overlay");
+            const infoPopup = document.getElementById("info-popup");
+            const aboutPopup = document.getElementById("about-popup");
+            const infoClose = document.getElementById("info-close");
+            const aboutClose = document.getElementById("about-close");
+
+            // Popup dragging variables
+            let isDragging = false;
+            let currentPopup = null;
+            let offsetX, offsetY;
+
+            // State
+            const locks = {
+                medium: false,
+                motif: false,
+                aesthetics: false,
+                color: false,
+            };
+
+            const currentPrompt = {
+                medium: "poster",
+                motif: "strawberries",
+                aesthetics: "vaporwave",
+                colorCount: 3,
+                colors: ["#ff7bac", "#00ffff", "#6200ff"],
+            };
+
+            // Tooltip element
+            let tooltip = null;
+
+            // Initialize with random values on page load
+            document.addEventListener("DOMContentLoaded", () => {
+                // Randomize all prompt elements on load
+                currentPrompt.aesthetics = getRandomItem(aesthetics);
+                currentPrompt.medium = getRandomItem(mediums);
+                currentPrompt.motif = getRandomItem(motifs);
+                currentPrompt.colorCount = parseInt(colorAmountSlider.value);
+                currentPrompt.colors = generateColors(currentPrompt.colorCount);
+
+                updateColorAmountDisplay();
+                setupEventListeners();
+                updatePromptDisplay();
+                setupPopupEvents();
+            });
+
+            // Event Listeners
+            function setupEventListeners() {
+                generateBtn.addEventListener("click", generatePrompt);
+                downloadBtn.addEventListener("click", downloadPrompt);
+
+                colorAmountSlider.addEventListener("input", () => {
+                    updateColorAmountDisplay();
+                    if (!locks.color) {
+                        currentPrompt.colorCount = parseInt(
+                            colorAmountSlider.value,
+                        );
+                        currentPrompt.colors = generateColors(
+                            currentPrompt.colorCount,
+                        );
+                        updatePromptDisplay();
+                    }
+                });
+
+                colorToggle.addEventListener("change", () => {
+                    colorAmountContainer.style.display = colorToggle.checked
+                        ? "block"
+                        : "none";
+                    updatePromptDisplay();
+                });
+
+                mediumToggle.addEventListener("change", updatePromptDisplay);
+                motifToggle.addEventListener("change", updatePromptDisplay);
+                aestheticsToggle.addEventListener(
+                    "change",
+                    updatePromptDisplay,
+                );
+
+                lockButtons.forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        const category = btn.dataset.category;
+                        locks[category] = !locks[category];
+                        btn.textContent = locks[category] ? "♥" : "♥";
+                        btn.classList.toggle("locked", locks[category]);
+                    });
+                });
+            }
+
+            // Setup popup events
+            function setupPopupEvents() {
+                // Open popups
+                infoBtn.addEventListener("click", () => openPopup(infoPopup));
+                aboutBtn.addEventListener("click", () => openPopup(aboutPopup));
+
+                // Close popups
+                infoClose.addEventListener("click", closeAllPopups);
+                aboutClose.addEventListener("click", closeAllPopups);
+                overlay.addEventListener("click", closeAllPopups);
+
+                // Close with Escape key
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape") closeAllPopups();
+                });
+
+                // Dragging functionality
+                [infoPopup, aboutPopup].forEach((popup) => {
+                    const header = popup.querySelector(".popup-header");
+
+                    header.addEventListener("mousedown", (e) => {
+                        if (e.button !== 0) return; // Only left mouse button
+
+                        isDragging = true;
+                        currentPopup = popup;
+
+                        const rect = popup.getBoundingClientRect();
+                        offsetX = e.clientX - rect.left;
+                        offsetY = e.clientY - rect.top;
+
+                        popup.style.cursor = "grabbing";
+                    });
+                });
+
+                document.addEventListener("mousemove", (e) => {
+                    if (!isDragging || !currentPopup) return;
+
+                    const x = e.clientX - offsetX;
+                    const y = e.clientY - offsetY;
+
+                    currentPopup.style.left = `${x}px`;
+                    currentPopup.style.top = `${y}px`;
+                    currentPopup.style.transform = "none";
+                });
+
+                document.addEventListener("mouseup", () => {
+                    if (currentPopup) {
+                        currentPopup.style.cursor = "auto";
+                    }
+                    isDragging = false;
+                    currentPopup = null;
+                });
+
+                // Close button functionality
+                closeBtn.addEventListener("click", () => {
+                    window.close();
+                });
+            }
+
+            // Open popup
+            function openPopup(popup) {
+                closeAllPopups();
+                overlay.style.display = "block";
+                popup.style.display = "block";
+            }
+
+            // Close all popups
+            function closeAllPopups() {
+                overlay.style.display = "none";
+                infoPopup.style.display = "none";
+                aboutPopup.style.display = "none";
+            }
+
+            // Update color amount display
+            function updateColorAmountDisplay() {
+                colorAmountValue.textContent = colorAmountSlider.value;
+            }
+
+            // Generate new prompt
+            function generatePrompt() {
+                if (!locks.aesthetics && aestheticsToggle.checked) {
+                    currentPrompt.aesthetics = getRandomItem(aesthetics);
+                }
+
+                if (!locks.medium && mediumToggle.checked) {
+                    currentPrompt.medium = getRandomItem(mediums);
+                }
+
+                if (!locks.motif && motifToggle.checked) {
+                    currentPrompt.motif = getRandomItem(motifs);
+                }
+
+                if (!locks.color && colorToggle.checked) {
+                    currentPrompt.colorCount = parseInt(
+                        colorAmountSlider.value,
+                    );
+                    currentPrompt.colors = generateColors(
+                        currentPrompt.colorCount,
+                    );
+                }
+
+                updatePromptDisplay();
+            }
+
+            // Get random item from array
+            function getRandomItem(array) {
+                return array[Math.floor(Math.random() * array.length)];
+            }
+
+            // Generate colors
+            function generateColors(count) {
+                const colors = [];
+
+                // 70% chance for cohesive scheme, 30% for random
+                if (Math.random() < 0.7) {
+                    // Cohesive scheme
+                    const baseHue = Math.floor(Math.random() * 360);
+                    const schemeType = Math.floor(Math.random() * 4); // Extended to include more schemes
+
+                    for (let i = 0; i < count; i++) {
+                        let hue;
+                        switch (schemeType) {
+                            case 0: // Monochromatic
+                                hue = baseHue;
+                                break;
+                            case 1: // Analogous
+                                hue = (baseHue + i * 30) % 360;
+                                break;
+                            case 2: // Complementary
+                                hue = (baseHue + (i % 2 === 0 ? 0 : 180)) % 360;
+                                break;
+                            case 3: // Triadic
+                                hue = (baseHue + i * 120) % 360;
+                                break;
+                        }
+
+                        // More balanced saturation and lightness ranges
+                        const saturation = 60 + Math.floor(Math.random() * 40); // 60-100
+                        const lightness = 30 + Math.floor(Math.random() * 50); // 30-80
+                        colors.push(hslToHex(hue, saturation, lightness));
+                    }
+                } else {
+                    // Random colors with better distribution
+                    for (let i = 0; i < count; i++) {
+                        const hue = Math.floor(Math.random() * 360);
+                        const saturation = 60 + Math.floor(Math.random() * 40); // 60-100
+                        const lightness = 30 + Math.floor(Math.random() * 50); // 30-80
+                        colors.push(hslToHex(hue, saturation, lightness));
+                    }
+                }
+
+                return colors;
+            }
+
+            // Convert HSL to Hex
+            function hslToHex(h, s, l) {
+                h /= 360;
+                s /= 100;
+                l /= 100;
+
+                let r, g, b;
+
+                if (s === 0) {
+                    r = g = b = l;
+                } else {
+                    const hue2rgb = (p, q, t) => {
+                        if (t < 0) t += 1;
+                        if (t > 1) t -= 1;
+                        if (t < 1 / 6) return p + (q - p) * 6 * t;
+                        if (t < 1 / 2) return q;
+                        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                        return p;
+                    };
+
+                    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    const p = 2 * l - q;
+
+                    r = hue2rgb(p, q, h + 1 / 3);
+                    g = hue2rgb(p, q, h);
+                    b = hue2rgb(p, q, h - 1 / 3);
+                }
+
+                const toHex = (x) => {
+                    const hex = Math.round(x * 255).toString(16);
+                    return hex.length === 1 ? "0" + hex : hex;
+                };
+
+                return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+            }
+
+            // Update prompt display
+            function updatePromptDisplay() {
+                // Update header text based on active toggles
+                const hasStyle = aestheticsToggle.checked;
+                const hasFormat = mediumToggle.checked;
+                const hasTheme = motifToggle.checked;
+                const hasColor = colorToggle.checked;
+
+                // Determine header text based on scenarios
+                if (hasStyle && hasFormat && hasTheme) {
+                    headerText.textContent = "how about a...";
+                } else if (!hasStyle && hasFormat && hasTheme) {
+                    headerText.textContent = "how about a...";
+                } else if (hasStyle && !hasFormat && hasTheme) {
+                    headerText.textContent = "how about something...";
+                } else if (hasStyle && hasFormat && !hasTheme) {
+                    headerText.textContent = "how about a...";
+                } else if (!hasStyle && !hasFormat && hasTheme) {
+                    headerText.textContent = "how about something...";
+                } else if (hasStyle && !hasFormat && !hasTheme) {
+                    headerText.textContent = "how about something...";
+                } else if (!hasStyle && hasFormat && !hasTheme) {
+                    headerText.textContent = "how about a...";
+                } else if (!hasStyle && !hasFormat && !hasTheme) {
+                    headerText.textContent = "how about something...";
+                }
+
+                // Update style text
+                document.getElementById("aesthetics-text").textContent =
+                    hasStyle ? currentPrompt.aesthetics : "";
+
+                // Update format text
+                document.getElementById("medium-text").textContent = hasFormat
+                    ? currentPrompt.medium
+                    : "";
+
+                // Update inspired by text
+                inspiredByText.textContent = hasTheme
+                    ? "featuring or inspired by"
+                    : "";
+
+                // Update theme text
+                motifText.textContent = hasTheme ? currentPrompt.motif : "";
+
+                // Update color text with singular/plural handling
+                if (hasColor) {
+                    const colorCount = currentPrompt.colorCount;
+                    const colorWord = colorCount === 1 ? "color" : "colors";
+                    document.getElementById("color-text").textContent =
+                        `using the ${colorCount} ${colorWord} below`;
+                } else {
+                    document.getElementById("color-text").textContent = "";
+                }
+
+                // Update color swatches
+                const colorsContainer =
+                    document.getElementById("colors-container");
+                colorsContainer.innerHTML = "";
+
+                if (hasColor) {
+                    currentPrompt.colors.forEach((color) => {
+                        const swatch = document.createElement("div");
+                        swatch.className = "color-swatch";
+                        swatch.style.backgroundColor = color;
+                        swatch.dataset.hex = color;
+                        colorsContainer.appendChild(swatch);
+
+                        // Add event listeners for tooltip and copy
+                        swatch.addEventListener("mouseenter", showTooltip);
+                        swatch.addEventListener("mousemove", moveTooltip);
+                        swatch.addEventListener("mouseleave", hideTooltip);
+                        swatch.addEventListener("click", copyToClipboard);
+                    });
+                }
+            }
+
+            // Show tooltip with color info
+            function showTooltip(e) {
+                const hex = e.target.dataset.hex;
+                const rgb = hexToRgb(hex);
+                const cmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b);
+
+                tooltip = document.createElement("div");
+                tooltip.className = "tooltip";
+                tooltip.innerHTML = `
+                <div>hex: ${hex}</div>
+                <div>rgb: ${rgb.r}, ${rgb.g}, ${rgb.b}</div>
+                <div>cmyk: ${cmyk.c}, ${cmyk.m}, ${cmyk.y}, ${cmyk.k}</div>
+            `;
+                document.body.appendChild(tooltip);
+                moveTooltip(e);
+            }
+
+            // Move tooltip with cursor
+            function moveTooltip(e) {
+                if (tooltip) {
+                    tooltip.style.left = e.pageX + "px";
+                    tooltip.style.top = e.pageY - 10 + "px";
+                }
+            }
+
+            // Hide tooltip
+            function hideTooltip() {
+                if (tooltip) {
+                    tooltip.remove();
+                    tooltip = null;
+                }
+            }
+
+            // Convert hex to RGB
+            function hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(
+                    hex,
+                );
+                return result
+                    ? {
+                          r: parseInt(result[1], 16),
+                          g: parseInt(result[2], 16),
+                          b: parseInt(result[3], 16),
+                      }
+                    : null;
+            }
+
+            // Convert RGB to CMYK
+            function rgbToCmyk(r, g, b) {
+                let c = 1 - r / 255;
+                let m = 1 - g / 255;
+                let y = 1 - b / 255;
+                let k = Math.min(c, m, y);
+
+                c = Math.round(((c - k) / (1 - k)) * 100);
+                m = Math.round(((m - k) / (1 - k)) * 100);
+                y = Math.round(((y - k) / (1 - k)) * 100);
+                k = Math.round(k * 100);
+
+                return { c, m, y, k };
+            }
+
+            // Copy hex to clipboard
+            function copyToClipboard(e) {
+                const hex = e.target.dataset.hex;
+                navigator.clipboard.writeText(hex).then(() => {
+                    showNotification(`hex code ${hex} copied to clipboard!`);
+                });
+            }
+
+            // Show notification
+            function showNotification(message) {
+                notification.textContent = message;
+                notification.classList.add("show");
+
+                setTimeout(() => {
+                    notification.classList.remove("show");
+                }, 4000);
+            }
+
+            // Download prompt as JPG
+            function downloadPrompt() {
+                loading.style.display = "flex";
+
+                html2canvas(document.querySelector(".right-panel"), {
+                    scale: 3,
+                    useCORS: true,
+                    backgroundColor: "#fff",
+                })
+                    .then((canvas) => {
+                        const link = document.createElement("a");
+                        link.download = "creative-prompt.jpg";
+                        link.href = canvas.toDataURL("image/jpeg", 0.9);
+                        link.click();
+                        loading.style.display = "none";
+                    })
+                    .catch((err) => {
+                        console.error("error generating image:", err);
+                        loading.style.display = "none";
+                    });
+            }
+        </script>
+    </body>
+</html>

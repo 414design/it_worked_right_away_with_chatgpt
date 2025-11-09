@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typography Distorsion</title>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Pinyon+Script&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+body {
+  font-family: 'EB Garamond', serif;
+  background-color: #000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* top-align instead of center */
+  min-height: 100vh;
+  margin: 0;
+  overflow-y: auto; /* allow vertical scroll */
+  position: relative;
+  padding: 40px 0; /* small vertical breathing room */
+}
+
+        
+        /* Matrix background effect */
+        #matrixCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .app {
+            background-color: rgba(30, 30, 30, 0.85);
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            width: 90%;
+            max-width: 1200px;
+            backdrop-filter: blur(5px);
+            border: 1px solid #00ff66;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .app-container {
+            display: flex;
+            gap: 20px;
+            align-items: center; /* Center items vertically */
+        }
+        
+        .controls-panel {
+            flex: 0 0 380px;
+        }
+        
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            align-items: center; /* Center preview vertically */
+            justify-content: center;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 160px; /* Increased height */
+            padding: 15px; /* Increased padding */
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: #1e1d28;
+            color: #00ff66;
+            border: 1px solid #00ff66;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            font-size: 18px; /* Larger font size */
+            line-height: 1.5; /* Better line spacing */
+        }
+        
+        .control {
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .control label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .control .small {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .preview {
+            width: 100%;
+            height: 480px;
+            background-color: rgba(15, 12, 41, 0.7);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #00ff66;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .preview::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(transparent 96%, rgba(0,255,102,0.02) 96%),
+                linear-gradient(90deg, transparent 96%, rgba(0,255,102,0.02) 96%);
+            background-size: 48px 48px;
+            mix-blend-mode: overlay;
+            opacity: 0.6;
+        }
+        
+        .preview-svg {
+            width: 95%;
+            height: 90%;
+            transform: scale(0.9);
+            transform-origin: center;
+            border-radius: 8px;
+            box-shadow: inset 0 0 80px rgba(0,255,102,0.02);
+        }
+        
+        button {
+            background: #00ff66;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        button:hover {
+            background: #00cc55;
+        }
+        
+        select, input[type="range"], input[type="color"] {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.35);
+            color: #00ff66;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 6px;
+            background: linear-gradient(90deg,#00321a 0%, rgba(0,255,102,0.08) 100%);
+            border-radius: 6px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00ff66;
+            box-shadow: 0 2px 8px rgba(0,255,102,0.16);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .note {
+            position: absolute;
+            left: 12px;
+            bottom: 8px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.25);
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            width: 46px;
+            height: 46px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(0,255,102,0.12), rgba(0,255,102,0.03));
+            border: 1px solid rgba(0,255,102,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #00ff66;
+            font-family: "IBM Plex Mono", monospace;
+            box-shadow: inset 0 -6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .title {
+            font-weight: 700;
+            font-size: 20px;
+            color: #00ff66;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: rgba(255,255,255,0.55);
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrixCanvas"></canvas>
+    
+    <div class="app">
+        <div class="header">
+            <div class="logo">MT</div>
+            <div>
+                <div class="title">Distorted Typography</div>
+                <div class="subtitle">Live SVG filters · export SVG & PNG</div>
+            </div>
+        </div>
+        
+        <div class="app-container">
+            <div class="controls-panel">
+                <textarea id="textInput" placeholder="Type multiline text…">Distorted Typography</textarea>
+                
+                <div class="control">
+                    <label><span>Font family</span></label>
+                    <select id="fontFamily">
+                        <option value="'Roboto', sans-serif">Roboto</option>
+                        <option value="'EB Garamond', serif">EB Garamond</option>
+                        <option value="'IBM Plex Mono', monospace">IBM Plex Mono</option>
+                        <option value="'Pinyon Script', cursive">Pinyon Script</option>
+                        <option value="'Caveat', cursive">Caveat</option>
+                    </select>
+                </div>
+                
+                <div class="control">
+                    <label><span>Font size <small id="sizeVal" class="small"></small></span></label>
+                    <input id="fontSize" type="range" min="24" max="220" value="96">
+                </div>
+                
+                <div class="control">
+                    <label><span>Font weight <small id="weightVal" class="small"></small></span></label>
+                    <input id="fontWeight" type="range" min="100" max="900" step="1" value="700">
+                </div>
+                
+                <div class="control">
+                    <label><span>Letter spacing <small id="letterVal" class="small"></small></span></label>
+                    <input id="letterSpacing" type="range" min="-10" max="40" value="6">
+                </div>
+                
+                <div class="control">
+                    <label><span>Horizontal stretch (scaleX)</span></label>
+                    <input id="stretchX" type="range" min="0.5" max="2" step="0.01" value="1">
+                </div>
+                
+                <div class="control">
+                    <label><span>Vertical stretch (scaleY)</span></label>
+                    <input id="stretchY" type="range" min="0.5" max="2" step="0.01" value="1">
+                </div>
+                
+                <div class="control">
+                    <label><span>Rotation (deg) <small id="rotVal" class="small"></small></span></label>
+                    <input id="rotation" type="range" min="-45" max="45" value="0">
+                </div>
+                
+                <div class="control">
+                    <label><span>Text color</span></label>
+                    <input id="textColor" type="color" value="#00ff66" style="height:40px;">
+                </div>
+                
+                <div class="control">
+                    <label><span>Pixelation (displacement scale)</span></label>
+                    <input id="pixelAmount" type="range" min="0" max="60" value="0">
+                </div>
+                
+                <div class="control">
+                    <label><span>Melt <span class="small">liquid distortion</span></span></label>
+                    <div class="checkbox-container">
+                        <input id="meltToggle" type="checkbox" />
+                        <span class="small">Enable melt when pixelation = 0</span>
+                    </div>
+                </div>
+                
+                <div class="buttons">
+                    <button id="saveSVG">Save SVG</button>
+                    <button id="savePNG">Save PNG</button>
+                    <button id="copyCSS">Copy CSS</button>
+                </div>
+                
+                <div class="small" style="opacity:0.7; margin-top: 15px;">
+                    Pro tip: Pixelation overrides Melt. If pixelation &gt; 0 the exported SVG will include the <code>pixelFilter</code>. Otherwise, if Melt is checked, the <code>melt</code> filter is embedded.
+                </div>
+            </div>
+            
+            <div class="preview-panel">
+                <div class="preview">
+                    <svg id="previewSVG" class="preview-svg" viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Live preview">
+                        <defs id="svgDefs"></defs>
+                        <rect x="0" y="0" width="1200" height="600" fill="transparent"></rect>
+                        <g id="contentGroup"></g>
+                    </svg>
+                    <div class="note">Preview resolution: 1200×600</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix background animation
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const chars = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const charArray = chars.split('');
+        
+        const matrixFontSize = 14;
+        const columns = canvas.width / matrixFontSize;
+        const drops = [];
+        
+        for(let i = 0; i < columns; i++) {
+            drops[i] = Math.floor(Math.random() * canvas.height / matrixFontSize);
+        }
+        
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#00ff66';
+            ctx.font = `${matrixFontSize}px monospace`;
+            
+            for(let i = 0; i < drops.length; i++) {
+                const text = charArray[Math.floor(Math.random() * charArray.length)];
+                ctx.fillText(text, i * matrixFontSize, drops[i] * matrixFontSize);
+                
+                if(drops[i] * matrixFontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                
+                drops[i]++;
+            }
+        }
+        
+        setInterval(drawMatrix, 33);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // --- Original functionality from first code ---
+        const textInput = document.getElementById('textInput');
+        const fontFamily = document.getElementById('fontFamily');
+        const fontSize = document.getElementById('fontSize');
+        const fontWeight = document.getElementById('fontWeight');
+        const letterSpacing = document.getElementById('letterSpacing');
+        const stretchX = document.getElementById('stretchX');
+        const stretchY = document.getElementById('stretchY');
+        const rotation = document.getElementById('rotation');
+        const textColor = document.getElementById('textColor');
+        const pixelAmount = document.getElementById('pixelAmount');
+        const meltToggle = document.getElementById('meltToggle');
+
+        const sizeVal = document.getElementById('sizeVal');
+        const weightVal = document.getElementById('weightVal');
+        const letterVal = document.getElementById('letterVal');
+        const rotVal = document.getElementById('rotVal');
+
+        const previewSVG = document.getElementById('previewSVG');
+        const svgDefs = document.getElementById('svgDefs');
+        const contentGroup = document.getElementById('contentGroup');
+
+        const saveSVGBtn = document.getElementById('saveSVG');
+        const savePNGBtn = document.getElementById('savePNG');
+        const copyCSSBtn = document.getElementById('copyCSS');
+
+        /* initial values */
+        sizeVal.textContent = fontSize.value + 'px';
+        weightVal.textContent = fontWeight.value;
+        letterVal.textContent = letterSpacing.value + 'px';
+        rotVal.textContent = rotation.value + '°';
+
+        /* update UI labels */
+        [fontSize,fontWeight,letterSpacing,rotation].forEach(el=>{
+          el.addEventListener('input',()=>{
+            sizeVal.textContent = fontSize.value + 'px';
+            weightVal.textContent = fontWeight.value;
+            letterVal.textContent = letterSpacing.value + 'px';
+            rotVal.textContent = rotation.value + '°';
+          });
+        });
+
+        /* Helper: escape XML text for embedding in SVG */
+        function escapeXML(s){
+          return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+        }
+
+        /* Build <defs> filters for preview & export */
+        function buildDefs(pixelScale){
+          // pixelScale: number for feDisplacementMap scale
+          // create defs string
+          const pixelBaseFrequency = 0.01;
+          const pixelNumOctaves = 2;
+          const meltBaseFreq = 0.004;
+          const meltNumOctaves = 2;
+          const meltScale = 9; // visually pleasant
+
+          return `
+            <filter id="pixelFilter" x="-60%" y="-60%" width="220%" height="220%">
+              <feTurbulence type="fractalNoise" baseFrequency="${pixelBaseFrequency}" numOctaves="${pixelNumOctaves}" stitchTiles="stitch" result="noise"/>
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="${pixelScale}" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+
+            <filter id="melt" x="-50%" y="-50%" width="200%" height="200%">
+              <feTurbulence type="fractalNoise" baseFrequency="${meltBaseFreq}" numOctaves="${meltNumOctaves}" result="mnoise"/>
+              <feDisplacementMap in="SourceGraphic" in2="mnoise" scale="${meltScale}" xChannelSelector="R" yChannelSelector="G"/>
+              <feGaussianBlur stdDeviation="0.5"/>
+            </filter>
+
+            <!-- subtle glow for neon -->
+            <filter id="neonGlow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          `;
+        }
+
+        /* Compute tspans positions so multiline centered vertically */
+        function computeTspans(lines, fSize, lineHeight, svgW, svgH){
+          // returns array of y positions for each line (absolute)
+          const totalHeight = lines.length * fSize * lineHeight;
+          // baseline offset: we will place text baseline at y values such that text block centered
+          const startY = (svgH - totalHeight) / 2 + fSize * 0.8; // 0.8 to approximate baseline
+          const ys = lines.map((_,i)=> Math.round(startY + i * fSize * lineHeight));
+          return ys;
+        }
+
+        /* Render preview SVG contentGroup */
+        function renderPreview(){
+          // gather state
+          const text = textInput.value || '';
+          const lines = text.split(/\r?\n/).filter(()=>true); // keep empty lines as well
+          const fFamily = fontFamily.value;
+          const fSize = parseFloat(fontSize.value);
+          const fWeight = fontWeight.value;
+          const lSpacing = parseFloat(letterSpacing.value);
+          const sX = parseFloat(stretchX.value);
+          const sY = parseFloat(stretchY.value);
+          const rot = parseFloat(rotation.value);
+          const color = textColor.value;
+          const pixel = parseFloat(pixelAmount.value);
+          const melt = meltToggle.checked;
+
+          // update defs
+          const defsHTML = buildDefs(pixel || 0);
+          svgDefs.innerHTML = defsHTML;
+
+          // choose filter to apply
+          let filterAttr = '';
+          if (pixel > 0){
+            filterAttr = 'url(#pixelFilter)';
+          } else if (melt){
+            filterAttr = 'url(#melt)';
+          } else {
+            filterAttr = ''; // none
+          }
+
+          // Clear content
+          while (contentGroup.firstChild) contentGroup.removeChild(contentGroup.firstChild);
+
+          // Outer group that will hold text and apply transforms
+          // We'll create <g id="textWrap"> with transform translate(600,0) to easily center horizontally
+          const textWrap = document.createElementNS('http://www.w3.org/2000/svg','g');
+          textWrap.setAttribute('id','textWrap');
+
+          // Compute positions
+          const viewW = 1200, viewH = 600;
+          const lineHeight = 1.05;
+          const ys = computeTspans(lines, fSize, lineHeight, viewW, viewH);
+
+          // Create <text> anchored center at x=600, but we will not use dominant-baseline to compute per-line y
+          const textEl = document.createElementNS('http://www.w3.org/2000/svg','text');
+          textEl.setAttribute('x', String(viewW / 2));
+          // set a base y: we'll not use it for tspans; but set font attributes
+          textEl.setAttribute('y', String(ys[0] || viewH/2));
+          textEl.setAttribute('text-anchor','middle');
+          textEl.setAttribute('fill', color);
+          textEl.setAttribute('font-family', fFamily);
+          textEl.setAttribute('font-size', fSize);
+          textEl.setAttribute('font-weight', fWeight);
+          textEl.setAttribute('letter-spacing', lSpacing + 'px');
+          textEl.setAttribute('style', `filter:${filterAttr};`);
+          textEl.setAttribute('paint-order','stroke fill markers');
+
+          // Add tspan per line
+          lines.forEach((ln, idx)=>{
+            const tspan = document.createElementNS('http://www.w3.org/2000/svg','tspan');
+            tspan.setAttribute('x', String(viewW/2));
+            tspan.setAttribute('y', String(ys[idx]));
+            tspan.textContent = ln === "" ? "\u00A0" : ln; // preserve empty lines
+            textEl.appendChild(tspan);
+          });
+
+          // Wrap transforms: translate to center, then apply scale and rotation around center
+          // We'll compute transform that scales around the center point (600,300)
+          const cx = viewW/2, cy = viewH/2;
+          // Compose: translate(cx,cy) rotate(rot) scale(sX,sY) translate(-cx,-cy)
+          const transform = `translate(${cx},${cy}) rotate(${rot}) scale(${sX},${sY}) translate(${-cx},${-cy})`;
+          textWrap.setAttribute('transform', transform);
+
+          // Optional neon stroke effect: duplicate text behind with slight stroke for glow feel
+          // For preview we simply rely on neonGlow filter to make subtle glow
+          textWrap.appendChild(textEl);
+
+          contentGroup.appendChild(textWrap);
+        }
+
+        /* Build export SVG string (1200x600) with embedded defs and tspans etc */
+        function buildSVGString(opts){
+          // opts includes all styles; returns full SVG string
+          const { text, fontFamily, fontSize, fontWeight, letterSpacing, stretchX, stretchY, rotation, color, pixelAmount, melt } = opts;
+          const w = 1200, h = 600;
+          const lines = text.split(/\r?\n/);
+          const lineHeight = 1.05;
+          const ys = computeTspans(lines, fontSize, lineHeight, w, h);
+
+          // compute filter selection
+          let chosenFilter = '';
+          if (pixelAmount > 0) chosenFilter = 'pixelFilter';
+          else if (melt) chosenFilter = 'melt';
+          // The defs must match preview
+          const defs = buildDefs(pixelAmount || 0);
+
+          // Build <tspan> markup
+          const tspanParts = lines.map((ln, i)=>{
+            const content = escapeXML(ln === "" ? "\u00A0" : ln);
+            return `<tspan x="${w/2}" y="${ys[i]}">${content}</tspan>`;
+          }).join('');
+
+          // Build transform
+          const cx = w/2, cy = h/2;
+          const transform = `translate(${cx},${cy}) rotate(${rotation}) scale(${stretchX},${stretchY}) translate(${-cx},${-cy})`;
+
+          // Inline style for the text element to ensure rendering without external CSS
+          const filterAttr = chosenFilter ? `filter="url(#${chosenFilter})"` : '';
+          const styleAttr = `font-family:${fontFamily};font-size:${fontSize}px;font-weight:${fontWeight};letter-spacing:${letterSpacing}px;fill:${color};paint-order:stroke fill markers;`;
+
+          const svg = `<?xml version="1.0" encoding="utf-8"?>
+        <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink">
+          <defs>
+            ${defs}
+          </defs>
+
+          <!-- background transparent so PNG can have same look when composited on dark canvas -->
+          <rect width="100%" height="100%" fill="transparent" />
+
+          <g id="textWrap" transform="${transform}">
+            <text x="${w/2}" y="${ys[0] || h/2}" text-anchor="middle" ${filterAttr} style="${styleAttr}">
+              ${tspanParts}
+            </text>
+          </g>
+        </svg>`;
+          return svg;
+        }
+
+        /* Event wiring: update preview on any control change */
+        const controls = [textInput,fontFamily,fontSize,fontWeight,letterSpacing,stretchX,stretchY,rotation,textColor,pixelAmount,meltToggle];
+        controls.forEach(c=> c.addEventListener('input', renderPreview));
+        controls.forEach(c=> c.addEventListener('change', renderPreview));
+
+        // initial render
+        renderPreview();
+
+        /* --- Export SVG --- */
+        function downloadBlob(blob, filename){
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(()=> URL.revokeObjectURL(url), 5000);
+        }
+
+        saveSVGBtn.addEventListener('click', ()=> {
+          const opts = {
+            text: textInput.value,
+            fontFamily: fontFamily.value,
+            fontSize: parseFloat(fontSize.value),
+            fontWeight: fontWeight.value,
+            letterSpacing: parseFloat(letterSpacing.value),
+            stretchX: parseFloat(stretchX.value),
+            stretchY: parseFloat(stretchY.value),
+            rotation: parseFloat(rotation.value),
+            color: textColor.value,
+            pixelAmount: parseFloat(pixelAmount.value),
+            melt: meltToggle.checked
+          };
+          const svgString = buildSVGString(opts);
+          const blob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+          downloadBlob(blob, 'matrix-typography.svg');
+        });
+
+        /* --- Export PNG (2400x1200, 2x) --- */
+        savePNGBtn.addEventListener('click', ()=> {
+          const opts = {
+            text: textInput.value,
+            fontFamily: fontFamily.value,
+            fontSize: parseFloat(fontSize.value),
+            fontWeight: fontWeight.value,
+            letterSpacing: parseFloat(letterSpacing.value),
+            stretchX: parseFloat(stretchX.value),
+            stretchY: parseFloat(stretchY.value),
+            rotation: parseFloat(rotation.value),
+            color: textColor.value,
+            pixelAmount: parseFloat(pixelAmount.value),
+            melt: meltToggle.checked
+          };
+          const svgString = buildSVGString(opts);
+          // create blob
+          const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+          const url = URL.createObjectURL(svgBlob);
+          const img = new Image();
+          // Important: use Blob URL (no crossOrigin needed)
+          img.onload = function(){
+            // draw to canvas scaled to 2x
+            const canvas = document.createElement('canvas');
+            canvas.width = 2400; canvas.height = 1200;
+            const ctx = canvas.getContext('2d');
+
+            // Fill background with transparent blackish so PNG looks identical over dark background,
+            // but we want true transparency so we keep it transparent (the preview has dark background outside SVG).
+            // We will draw a dark backdrop to match preview if desired; requirement says PNG should visually match SVG,
+            // The SVG background is transparent, and preview had dark surrounding. We'll keep transparent canvas.
+            ctx.fillStyle = 'rgba(0,0,0,0)';
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+
+            // Draw the svg image stretched to full canvas (SVG intrinsic size 1200x600)
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(function(blob){
+              downloadBlob(blob, 'matrix-typography@2x.png');
+              URL.revokeObjectURL(url);
+            }, 'image/png');
+          };
+          img.onerror = function(e){
+            alert('Error rendering PNG. Try exporting SVG and opening in an editor if problems occur.');
+            URL.revokeObjectURL(url);
+          };
+          img.src = url;
+        });
+
+        /* --- Copy CSS --- */
+        copyCSSBtn.addEventListener('click', async ()=>{
+          const css = buildCSSClass();
+          try {
+            await navigator.clipboard.writeText(css);
+            copyCSSBtn.textContent = 'Copied!';
+            setTimeout(()=> copyCSSBtn.textContent = 'Copy CSS', 1400);
+          } catch (e){
+            // fallback
+            const ta = document.createElement('textarea');
+            ta.value = css;
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); copyCSSBtn.textContent='Copied!'; setTimeout(()=> copyCSSBtn.textContent='Copy CSS',1400);} catch {}
+            ta.remove();
+          }
+        });
+
+        function buildCSSClass(){
+          const fFamily = fontFamily.value;
+          const fSize = fontSize.value + 'px';
+          const fWeight = fontWeight.value;
+          const lSpacing = letterSpacing.value + 'px';
+          const sX = stretchX.value;
+          const sY = stretchY.value;
+          const rot = rotation.value + 'deg';
+          const color = textColor.value;
+          const pixel = pixelAmount.value;
+          const melt = meltToggle.checked;
+
+          // Note: CSS cannot reliably include SVG filter definitions inline; we include a comment hint for SVG.
+          // Provide transform and basic styles as requested.
+          const className = '.matrix-typography';
+          const transform = `transform: translateZ(0) rotate(${rot}) scale(${sX}, ${sY});`;
+          let filterHint = '';
+          if (parseFloat(pixel) > 0){
+            filterHint = '/* Uses an SVG filter: url(#pixelFilter) — include the SVG <defs> when embedding */\n  filter: url(#pixelFilter);';
+          } else if (melt){
+            filterHint = '/* Uses an SVG filter: url(#melt) — include the SVG <defs> when embedding */\n  filter: url(#melt);';
+          } else {
+            filterHint = '';
+          }
+
+          const css = `${className} {
+          font-family: ${fFamily};
+          font-size: ${fSize};
+          font-weight: ${fWeight};
+          letter-spacing: ${lSpacing};
+          color: ${color};
+          ${transform}
+          ${filterHint}
+        }`;
+          return css;
+        }
+
+        /* Accessibility: keyboard shortcuts */
+        document.addEventListener('keydown', (e)=>{
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){
+            e.preventDefault();
+            saveSVGBtn.click();
+          }
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p'){
+            e.preventDefault();
+            savePNGBtn.click();
+          }
+        });
+
+        /* Keep preview up-to-date if fonts load after initial render */
+        document.fonts && document.fonts.ready && document.fonts.ready.then(renderPreview);
+    </script>
+</body>
+</html>
