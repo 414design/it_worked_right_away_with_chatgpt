@@ -1,6 +1,6 @@
 # It worked right away with ChatGPT
 
-**A design toolkit and experiment using AI and vibe coding to expand creative possibilities—without proprietary, closed models.**
+**A design toolkit and experiment using AI and vibe coding to expand creative possibilities. Without proprietary, closed models. Mostly.**
 
 ![Project Screenshot](it_worked_right_away_with_chatgpt.png)
 
@@ -8,7 +8,7 @@
 
 This project is a collection of experimental design tools created by students at **Darmstadt University of Applied Sciences**. It demonstrates how open language models can empower designers and enable novel, conscious approaches to creativity—not just for convenience, but for exploration and innovation.
 
-Each tool is built using open-source AI models and web technologies, proving that powerful, creative tools can be developed without relying on closed systems.
+Each tool is built using open-source AI models and web technologies, proving that powerful, creative tools can be developed without relying on closed systems. If closed weights models where used they are attributed in the tools description.
 
 ## Features
 
@@ -35,8 +35,6 @@ Each tool is built using open-source AI models and web technologies, proving tha
 | The Randominator              | Olivia Wilk       | Spark creativity and overcome art block with random inspiration.            |
 | Frame2Frame Animation         | Senay Dogru       | Create stop-motion animations with drawings and imported images.            |
 
-*(See the full list in the app!)*
-
 ## How to Use
 
 1. **Explore**: Click on any card to reveal its details.
@@ -51,12 +49,8 @@ Each tool is built using open-source AI models and web technologies, proving tha
 
 ## Try It Out
 
-[Open the Live Demo](#) *(Replace with your live demo link if available)*
+[Open the Live Demo](https://felixdoelker.de/it_worked_right_away_with_chatgpt/)
 
 ## License
 
-This project is open-source and available under the [MIT License](LICENSE).
-
----
-
-**Developed with ❤️ by students at Darmstadt University of Applied Sciences.**
+This project is open-source and available under the Attribution-ShareAlike 4.0 International license.
