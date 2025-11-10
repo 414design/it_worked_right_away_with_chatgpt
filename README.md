@@ -25,8 +25,8 @@ Each tool is built using open-source AI models and web technologies, proving tha
 | The Web Canvas                | Aron Breuer        | Test colors and fonts against web standards with real-time previews.        |
 | Color Playground              | Catalina Buhs     | Manipulate, save, and export HSL color palettes.                            |
 | Distorted Typography          | Elizaveta Kircaglo| Experiment with real-time text distortions and effects.                     |
-| Prompt Architect              | Emir              | Build structured prompts for image-generation AI tools.                    |
-| Iconify Studio                | Gizem             | Generate icons with retro Pacman aesthetics.                                |
+| Prompt Architect              | Emir Can Yilmaz   | Build structured prompts for image-generation AI tools.                    |
+| Iconify Studio                | Gizem Ilgün       | Generate icons with retro Pacman aesthetics.                                |
 | Dithermaster                  | Jonathan Hasse    | Create high-resolution dithered images.                                     |
 | Breathe                       | Julia Schöler     | A digital canvas for positive, solitary creativity.                        |
 | Vibe Type                     | Kaya Kapotas      | Create fonts from scratch and break traditional design workflows.           |
